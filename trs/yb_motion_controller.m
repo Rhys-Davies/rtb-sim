@@ -1,7 +1,18 @@
+% Returns a list of wheel velocities to achieve the given forward, lateral
+% and rotational velocities. The velocities are normalized to say
+% within the bounds of the actuator capabilities.
+
+% (C) Copyright Renaud Detry 2013.
+% Distributed under the GNU General Public License.
+% (See http://www.gnu.org/copyleft/gpl.html)
+
+% Modified Rhys Davies 2017
+% Converted into a class and modified to output a vector of velocities
+% instead of directly actuating the the wheels.
+% Output is: vel = frontleft, rearleft,rearright,frontright;
+
 classdef yb_motion_controller < handle
-    %YB_MOTION_CONTROLLER Summary of this class goes here
-    %   Detailed explanation goes here
-    
+
     properties
        previousForwBackVel
        previousLeftRightVel

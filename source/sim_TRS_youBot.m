@@ -89,11 +89,13 @@ classdef sim_TRS_youBot < sim_entity
             
             vel = obj.mo_ctrl.update(forwBackVel, leftRightVel, rotVel);
             
-            %obj.sim.pauseComms(1);
+            %obj.sim.pauseComms(true);
+            %disp('pause')
             for l=1:4
                 obj.wheels(l).set_tgt_vel(vel(l));
             end
-            %obj.sim.pauseComms(0);
+            %disp('unpause')
+            %obj.sim.pauseComms(false);
             
         end
         

@@ -22,6 +22,9 @@ clc
 % buffer. All subsequent calls must use simx_opmode_buffer. To stop
 % streaming a call must be made using simx_opmode_discontinue.
 %
+% Will need to implement an argument for overriding opmode to make pausing
+% communications, sending a number of commands, then unpausing possible.
+%
 % Ideally, setters should use opmode_oneshot.
 % Getters that are not streaming should use oneshot_wait
 %
@@ -46,6 +49,8 @@ leftRightVel = 0;
 rotVel = 0;
 prevOri = 0; 
 prevLoc = 0;
+
+pause(2); %Give everything time to settle
 
 yb.arm.set_state(startPose);
 
@@ -164,12 +169,11 @@ while true
             %% TODO Move the arm to face the object.
             % Get the arm position. 
             
-            disp('extend')
             
             tpos = yb.gripper.position(yb.arm_ref.id); % ptip rl2 armRef youBot_ref
             %youBot_gripperPositionTip
             % If the arm has reached the wanted position, move on to the next state. 
-            disp(norm(tpos - [0.3259 -0.0010 0.2951]))
+            
             if norm(tpos - [0.3259 -0.0010 0.2951]) < .002
                 
                 % Set the inverse kinematics (IK) mode to position AND orientation. 
@@ -181,7 +185,6 @@ while true
             %% TODO    %% Move the gripper tip along a line so that it faces the object with the right angle.
             % Get the arm tip position. (It is driven only by this position, except if IK is disabled.)
             
-            disp('reachout')
             
             tpos = yb.gripper.position(yb.arm_ref.id); % (referenced to 'youBot_ref') 'youBot_gripperPositionTip'
             
