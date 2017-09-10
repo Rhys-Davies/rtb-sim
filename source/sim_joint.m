@@ -29,13 +29,9 @@ classdef sim_joint < sim_entity
     
     methods
         
-        function obj = sim_joint(sim,ident,stream)
+        function obj = sim_joint(sim,ident,varargin)
     
             obj = obj@sim_entity(sim,ident);
-    
-            if nargin == 3 && stream == true
-                pos = obj.sim.getJointPosition(obj.id,stream);
-            end
             
         end
         
@@ -69,13 +65,13 @@ classdef sim_joint < sim_entity
             
         end
         
-        function set_target_velocity(obj,vel)
+        function set_tgt_vel(obj,vel)
             
             obj.sim.setJointTargetVelocity(obj.id,vel);
             
         end
         
-        function set_target_position(obj,pos)
+        function set_tgt_pos(obj,pos)
             
             obj.sim.setJointTargetPosition(obj.id,pos);
             
@@ -90,7 +86,7 @@ classdef sim_joint < sim_entity
         
         function enable_control(obj)
         
-            obj.set_IntParam(2001,0); 
+            obj.set_IntParam(2001,1); 
                                      
         end
         

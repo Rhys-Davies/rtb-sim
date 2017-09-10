@@ -1,6 +1,6 @@
 %% Class SIM_TRS_YOUBOT
 %  A class to represent the TRS modified youBot.
-%  The stock VREP youBot does not contain the RGBD sensor or lidar 
+%  The stock VREP youBot does not contain the RGBD sensor or Hokuyo
 %  The naming scheme for the wheels and arm joints is identicle however.
 %
 %  Properties:
@@ -91,31 +91,33 @@ classdef sim_TRS_youBot < sim_entity
             
             %obj.sim.pauseComms(1);
             for l=1:4
-                obj.wheels(l).set_target_velocity(vel(l));
+                obj.wheels(l).set_tgt_vel(vel(l));
             end
             %obj.sim.pauseComms(0);
             
         end
         
+        
+        %% This section may be more appropriate in sim_arm.
         function setkinematicmode(obj,mode)
    
-            obj.sim.setIntegerSignal('km_mode',mode);
+           obj.sim.setIntegerSignal('km_mode', mode);
             
         end
         
         function open_gripper(obj)
             
-            
+            obj.sim.setIntegerSignal('gripper_open',1)
             
         end
         
         function close_gripper(obj)
             
-            
+            obj.sim.setIntegerSignal('gripper_open',0)
             
         end
         
-        
     end
+    
 end
 

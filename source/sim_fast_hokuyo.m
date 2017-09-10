@@ -46,8 +46,8 @@ classdef sim_fast_hokuyo < sim_entity
         
         function [pnts,numdet] = scan(obj)
         
-            p1 = obj.sensor1.frame;
-            p2 = obj.sensor2.frame;
+            p1 = obj.sensor1.grab;
+            p2 = obj.sensor2.grab;
             
             obs1 = p1(4,:) < obj.range;
             obs2 = p2(4,:) < obj.range;

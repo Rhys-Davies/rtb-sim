@@ -23,23 +23,23 @@ classdef sim_cameraRGBD < sim_entity
     
     methods
         
-        function obj = sim_cameraRGBD(sim,ident)
+        function obj = sim_cameraRGBD(sim,ident,varargin)
             
-            obj = obj@sim_entity(sim,ident);
-            obj.rgbsensor = obj.sim.rgb_sensor('rgbSensor');
-            obj.xyzsensor = obj.sim.xyz_sensor('xyzSensor');
+            obj = obj@sim_entity(sim,ident,varargin);
+            obj.rgbsensor = obj.sim.rgb_sensor('rgbSensor',varargin);
+            obj.xyzsensor = obj.sim.xyz_sensor('xyzSensor',varargin);
             
         end
         
         function im = image(obj)
             
-            im = obj.rgbsensor.frame;
+            im = obj.rgbsensor.grab;
             
         end
         
         function pnts = point_cloud(obj)
             
-            pnts = obj.xyzsensor.frame;
+            pnts = obj.xyzsensor.grab;
             
         end
         

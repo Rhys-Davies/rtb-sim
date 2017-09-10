@@ -15,14 +15,18 @@ clc
 
 %%
 %
-% Weird driving behaviour is because of opmodes. Not in streaming mode, so
-% delay time makes controller react slowly.
+% Weird driving behaviour is because of opmodes. Not in streaming mode, so 
 % Joint position. Object position + orientation. Reading sensors.
 % Worth noting: Calls using opmode_streaming do not return data from the
 % buffer. All subsequent calls must use simx_opmode_buffer. To stop
 % streaming a call must be made using simx_opmode_discontinue.
 %
+% A call using any other opmode disables streaming. Which is what is
+% happening here. Also may be necessary to use opmode_oneshot on the arm
+% joints and the wheel joints.
+%
 % Ideally, setters should use opmode_oneshot.
+% Setting signals should use oneshot_wait
 % Getters that are not streaming should use oneshot_wait
 %
 %%

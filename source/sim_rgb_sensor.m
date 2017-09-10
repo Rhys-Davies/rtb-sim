@@ -24,65 +24,28 @@ classdef sim_rgb_sensor < sim_entity
     
     methods
         
-        function obj = sim_rgb_sensor(sim,ident)
+        function obj = sim_rgb_sensor(sim,ident,varargin)
         
-            obj = obj@sim_entity(sim,ident);
+            obj = obj@sim_entity(sim,ident,varargin);
             
         end
         
-        function img = frame(obj,grey)
-        %% sim_rgb_sensor.frame
+        function data = grab(obj,varargin)
+        %% sim_rgb_sensor.grab
         % Retrives a single frame from camera
         %
         % Arguments
         %   grey               % Boolean. When true a greyscale image will
         %                        be returned.
            
-            if nargin < 2
-                grey = false;
-            end
+            grey = false; %TODO
             
-            [~,img] = obj.sim.readVisionSensor(obj.id,grey);
-        
+            obj.sim.setIntegerSignal('handle_rgb_sensor',1);
+            
+            data = obj.sim.readVisionSensor(obj.id,grey);
+            
         end
         
-        function res = resolution(obj)
-        %% sim_rgb_sensor.resolution
-        % Gets the resolution of the sensor. 
-        
-            res = obj.sim.getVisionSensorRes();
-        
-        end
-        
-        function f = fov(obj)
-        %% sim_rgb_sensor.fov
-        % Gets the FOV of the sensor.
-        
-            f = obj.sim.getVisionSensorFOV(obj.id);
-        
-        end
-        
-        function set_resolution(obj,new)
-        %% sim_rgb_sensor.set_resolution(new)
-        % Sets the resolution of the sensor to 'new'
-        % 
-        % Arguments
-        %   new         % A 2-vector that contains [width, height]
-        
-            obj.sim.setVisionSensorRes(obj.id,new);
-        
-        end
-        
-        function set_fov(obj,new)
-        %% sim_xyz_sensor.set_resolution(new)
-        % Sets the resolution of the sensor to 'new'
-        % 
-        % Arguments
-        %   new         % An angle in radians.
-
-            obj.sim.setVisionSensorFOV(obj.id,new);
-        
-        end       
         
     end
     

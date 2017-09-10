@@ -7,6 +7,8 @@
 
 %% TODO!!
 % Getters and setters need to allow a seperate opmode to be specified.
+% Also need to know when a command is set to stream and use opmode_buffer
+% instead of the currently set opmode.
 % Wrap inputParser or switch to RTB input parser.
 %%
 
@@ -64,43 +66,7 @@
 %
 %
 %
-
-%% Object Types
-
-% shape - sim_object_shape_type
-% joint - sim_object_joint_type
-% graph - sim_object_graph_type
-% camera - sim_object_camera_type
-% light - sim_object_light_type
-% dummy - sim_object_dummy_type
-% proximity_sensor - sim_object_proximitysensor_type
-% path - sim_object_path_type
-% vision_sensor - sim_object_visionsensor_type
-% mill - sim_object_mill_type
-% force_sensor - sim_object_forcesensor_type
-% mirror - sim_object_mirror_type
-% -----------------
-% Object Subtypes  
-% -----------------
-% omni_light - sim_light_omnidirectional_subtype
-% spot_light - sim_light_spot_subtype
-% directional_light - sim_light_directional_subtype
-% revolute_joint - sim_joint_revolute_subtype
-% prismatic_joint - sim_joint_prismatic_subtype
-% spherical_joint - sim_joint_spherical_subtype
-% simple_shape - sim_shape_simpleshape_subtype
-% multi_shape - sim_shape_multishape_subtype
-% ray_proximity_sensor - sim_proximitysensor_ray_subtype
-% pyramid_proximity_sensor - sim_proximitysensor_pyramid_subtype
-% cylinder_proximity_sensor - sim_proximitysensor_cylinder_subtype
-% disc_proximity_sensor - sim_proximitysensor_disc_subtype
-% cone_proximity_sensor - sim_proximitysensor_cone_subtype
-% pyramid_mill -  sim_mill_pyramid_subtype
-% cylinder_mill - sim_mill_cylinder_subtype
-% disc_mill - sim_mill_disc_subtype
-% cone_mill - sim_mill_cone_subtype   
-
-
+%
 %% Opmodes
 %
 %
@@ -227,8 +193,6 @@
 %         [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
         
 classdef VREP < simulator
-    %UNTITLED3 Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         mode
@@ -251,7 +215,7 @@ classdef VREP < simulator
             % if path not specified then assume required files are in a
             % folder already on the MATLAB path.
             
-            %% Low Priority To-Do: Wrap inputParser into a nicer class.
+            %% input parsing
             defaultIP = '127.0.0.1';
             defaultPORT = 19997;
             defaulttimeout = 2000;
@@ -575,7 +539,7 @@ classdef VREP < simulator
             
         end
         
-        function types = getType(obj,objhandle)
+        function types = getTypes(obj,objhandle)
         
             [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.mode);
             
@@ -609,7 +573,8 @@ classdef VREP < simulator
             
         end
         
-        function orient = getOrientation(obj,handle,rel2)
+        %% TODO Add opmode_streaming support.
+        function orient = getOrientation(obj,handle,rel2,varargin)
                         
             if nargin < 3
                 rel2 = -1;
@@ -622,8 +587,9 @@ classdef VREP < simulator
             end
             
         end
-              
-        function pos = getPosition(obj,handle,rel2)
+            
+        %% TODO Add opmode_streaming support.
+        function pos = getPosition(obj,handle,rel2,varargin)
             
             if nargin < 3
                 rel2 = -1;
@@ -636,6 +602,7 @@ classdef VREP < simulator
             end
             
         end
+        %%
         
         function setPosition(obj,handle,new,rel2)
             % rel2 = -1 for global frame
@@ -670,12 +637,11 @@ classdef VREP < simulator
         end
         
 %%      Joint Specific Methods
-        
-        function pos = getJointPosition(obj,handle,stream)
+        %% TODO Add opmode_streaming support.
+        function pos = getJointPosition(obj,handle,varargin)
         % Returns the intrinsic position of a joint. Cannot be used with
         % spherical joints
         
-            if nargin < 3
                 
                 [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,obj.mode);
 
@@ -683,15 +649,11 @@ classdef VREP < simulator
                     throw(obj.except(r)); 
                 end
                 
-            elseif nargin == 3 && stream == true
-                
-                [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,obj.sim.simx_opmode_streaming);
-                
-            end
+
         
         end
         
-        function matrix = getJointMatrix(obj,handle)
+        function matrix = getJointMatrix(obj,handle,varargin)
         % Returns the intrisic matrix of a joint.
         
             [r,matrix] = obj.sim.simxGetJointMatrix(obj.clientID,handle,obj.mode);
@@ -702,7 +664,8 @@ classdef VREP < simulator
         
         end
         
-        function force = getJointForce(obj,handle)
+        %% TODO Add opmode_streaming support.
+        function force = getJointForce(obj,handle,varargin)
         % For prismatic and revolute joints only
         % When using the bullet physics engine, returns force or torque
         % applied to the joint motor.
@@ -794,7 +757,7 @@ classdef VREP < simulator
 
         function sig = getFloatSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,signalName,obj.mode);
+            [r,sig] = obj.sim.simxGetFloatingSignal(obj.clientID,signalName,obj.mode);
            
             if r ~= 0
                 throw(obj.except(r)); 
@@ -979,7 +942,7 @@ classdef VREP < simulator
 
         function param = getFloatParam(obj,target)
             
-            [r,param] = obj.sim.simxGetFloatParameter(obj.clientID,target,obj.mode);
+            [r,param] = obj.sim.simxGetFloatingParameter(obj.clientID,target,obj.mode);
           
             if r ~= 0
                 throw(obj.except(r)); 
@@ -1146,13 +1109,12 @@ classdef VREP < simulator
 %         [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
         
         
-        
-        function [res,img] = readVisionSensor(obj,target,grey)
-            % TODO add description for opt
+        %% TODO Add opmode_streaming support.
+        function img = readVisionSensor(obj,target,varargin)
+
+            grey = false; % TODO
             
-            obj.setIntegerSignal('handle_rgb_sensor', 1);
-            
-            [r,res,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.sim.simx_opmode_oneshot_wait);
+            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.sim.simx_opmode_oneshot_wait);
             
             if r ~= 0
                throw(obj.except(r)); 
@@ -1160,49 +1122,11 @@ classdef VREP < simulator
             
         end
         
-        %% TODO MOVE ALL THIS INTO sim_sensor
-        
-        function [res] = getVisionSensorRes(obj)
-            
-            res(1) = obj.getIntegerParam('sim_visionintparam_resolution_x');
-            res(2) = obj.getIntegerParam('sim_visionintparam_resolution_y');
-            
-        end
-        
-        function [fov] = getVisionSensorFOV(obj)
-            
-            fov = obj.getFloatParam('sim_visionfloatparam_perspective_angle');
-            
-        end
-        
-        function setVisionSensorRes(obj,new) 
-            
-            obj.setIntegerParam('sim_visionintparam_resolution_x',new(1));
-            obj.setIntegerParam('sim_visionintparam_resolution_y',new(2));
-            
-        end
-        
-        function setVisionSensorFOV(obj,new)
-            
-            obj.setFloatParam('sim_visionfloatparam_perspective_angle',new);
-            
-        end
-        
-        function setVisionClipping(obj,near,far)
-        
-            obj.setFloatParam('sim_visionfloatparam_near_clipping',near);
-            obj.setFloatParam('sim_visionfloatparam_far_clipping',far);
-        
-        end
-        
-        %%
-        
-        function [pts] = readPointCloudSensor(obj,target)
-            
-            
-            %%TODO: MOVE THIS INTO sim_xyz_sensor
-            
-            obj.setIntegerSignal('handle_xyz_sensor', 1);
+        %% TODO Add opmode_streaming support.
+        function pts = readPointVisionSensor(obj,target,varargin)
+                 
+            %obj.setIntegerSignal('handle_xyz_sensor', 1);
+            %obj.setIntegerSignal('handle_xy_sensor', 1);
             [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.mode);
         
             if r ~= 0
@@ -1210,8 +1134,8 @@ classdef VREP < simulator
             end
             
             
-            % First 15 data entries are min max and average of intensity,
-            % red,green, blue, depth. This is the first packet as defined
+            % First 15 data entries are min max and average of: Intensity,
+            % red, green, blue, and depth. This is the first packet as defined
             % by dataIndex(1). Entries 16 and 17 are image height and width.
             
             w = auxData(dataIndex(1)+1); % Image width
@@ -1224,56 +1148,12 @@ classdef VREP < simulator
             % Each colum is x,y,z,dist
             %
             pts = reshape(auxData((dataIndex(1)+2+1):end), 4, w*h);
-            
-        end
-        
-        function [pts] = readLidarSensor(obj,target,stream)
-            
-            %%TODO: MOVE THIS INTO sim_sensor
-            
-            if nargin < 3 
-                obj.setIntegerSignal('handle_xy_sensor', 1);
-                [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.mode);
-                
-                if r ~= 0
-                    throw(obj.except(r)); 
-                end
-                
-                
-            % First 15 data entries are min max and average of intensity,
-            % red,green, blue, depth. This is the first packet as defined
-            % by dataIndex(1). Entries 16 and 17 are image height and width.
-            
-            w = auxData(dataIndex(1)+1); % Image width
-            h = auxData(dataIndex(1)+2); % Image height
-            
-            %dataIndex(1) + 2 + 1 the start of the sensor output data.
-            
-            
-            % 4 rows, w*h columns
-            % Each colum is x,y,z,dist
-            %
-            pts = reshape(auxData((dataIndex(1)+2+1):end), 4, w*h);
-                
-                
-            elseif nargin == 3 && stream == true
-                
-                [~, ~, ~,~] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.sim.simx_opmode_streaming);
-                pts = 0;
-                
-            end
-            
-            
-
-            
-            
-
         
         end
         
-        function [res,img] = readVisionSensorDepth(obj,target)
-            
-            obj.setIntegerSignal('handle_xyz_sensor', 1);
+        
+        %% TODO Add opmode_streaming support.
+        function [res,img] = readVisionSensorDepth(obj,target,varargin)
             
             [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,obj.sim.simx_opmode_oneshot_wait);
             
@@ -1286,8 +1166,8 @@ classdef VREP < simulator
         
 
 %% Other sensors
-
-        function [state,torque,force] = readForceSensor(obj,ident)
+        %% TODO Add opmode_streaming support.
+        function [state,torque,force] = readForceSensor(obj,ident,varargin)
         
             [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,obj.mode);
             
@@ -1297,8 +1177,8 @@ classdef VREP < simulator
             
         end
         
-        
-        function [state,point] = readProximitySensor(obj,ident)
+        %% TODO Add opmode_streaming support.
+        function [state,point] = readProximitySensor(obj,ident,varargin)
             
             [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,obj.mode); % [r,state,point,found_obj,found_surface] 
             
@@ -1311,52 +1191,52 @@ classdef VREP < simulator
         
 %% Simulation Objects
 
-        function out = entity(obj,ident)
+        function out = entity(obj,ident,varargin)
             
             out = sim_entity(obj,ident);
 
         end
         
-        function out = joint(obj,ident,stream)
+        function out = joint(obj,ident,varargin)
             
-            out = sim_joint(obj,ident,stream);
+            out = sim_joint(obj,ident,varargin);
             
         end
                 
-        function out = rgb_sensor(obj,ident)
+        function out = rgb_sensor(obj,ident,varargin)
             
-            out = sim_rgb_sensor(obj,ident);
-            
-        end
-        
-        function out = xyz_sensor(obj,ident)
-            
-            out = sim_xyz_sensor(obj,ident);
+            out = sim_rgb_sensor(obj,ident,varargin);
             
         end
         
-        function out = xy_sensor(obj,ident,stream)
+        function out = xyz_sensor(obj,ident,varargin)
+            
+            out = sim_xyz_sensor(obj,ident,varargin);
+            
+        end
+        
+        function out = xy_sensor(obj,ident,varargin)
             
 
-            out = sim_xy_sensor(obj,ident,stream);
+            out = sim_xy_sensor(obj,ident,varargin);
         
         end
         
-        function out = rgbdCamera(obj,ident)
+        function out = rgbdCamera(obj,ident,varargin)
             
-            out = sim_cameraRGBD(obj,ident);
+            out = sim_cameraRGBD(obj,ident,varargin);
         
         end
         
-        function out = forceSensor(obj,ident,breakable)
+        function out = forceSensor(obj,ident,breakable,varargin)
             
-            error('Not Implemented Yet')
+            error('Not Implemented')
             
         end
         
-        function out = hokuyo(obj,ident,ref)
+        function out = hokuyo(obj,ident,ref,varargin)
 
-            obj.setIntegerSignal('handle_xy_sensor', 2);
+            
              
             if nargin < 3
                 out = sim_fast_hokuyo(obj,ident);
@@ -1367,7 +1247,7 @@ classdef VREP < simulator
         end
         
         
-        function out = arm(obj,ident,fmt)
+        function out = arm(obj,ident,fmt,varargin)
 
             if nargin < 3
                 [list,num] = obj.armhelper(ident);
@@ -1387,12 +1267,7 @@ classdef VREP < simulator
         end
         
         %% Misc Helpers
-        
-        function setKinematicsMode(obj,mode)
-            %% TODO: MOVE THIS OUT
-            obj.setIntegerSignal('km_mode', mode);
-        
-        end
+
         
         
         function [out,num] = armhelper(obj, name, fmt)

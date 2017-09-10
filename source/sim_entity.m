@@ -36,7 +36,7 @@ classdef sim_entity < handle
     
     methods
         
-        function obj = sim_entity(sim,ident)
+        function obj = sim_entity(sim,ident,varargin)
             
             obj.sim = sim;
             if isstr(ident)

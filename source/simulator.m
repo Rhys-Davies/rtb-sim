@@ -38,7 +38,7 @@ classdef (Abstract) simulator < handle
         [objid,name] = getObjects(obj,type)
         [handle] = getHandle(obj,name)
         name = getName(obj,objhandle)
-        types = getType(obj,objhandle)
+        types = getTypes(obj,objhandle)
         children = getChildren(obj,handle)
         orient = getOrientation(obj,handle,rel2)             
         pos = getPosition(obj,handle,rel2)
