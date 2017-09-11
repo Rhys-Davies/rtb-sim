@@ -12,7 +12,7 @@
 % force                    % Retrieves magnitue of force acting on joint.
 %
 % set_jpos                 % Sets joint's intrinsic position.
-% set_tgt_vel              % Sets joint's intrinsic target velocity. Only 
+% set_tgt_vel              % Sets joint's target velocity. Only 
 %                             applicable if the joint motor is enabled.  
 % set_tgt_pos              % Sets joint's target position. Only applicable
 %                             if the joint motor and position control are
