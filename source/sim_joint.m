@@ -8,18 +8,18 @@
 %       
 % Methods:
 %
-% euler                     % Retrieves joint's current intrinsic position.
-% force                     % Retrieves magnitue of force acting on joint.
+% jpos                     % Retrieves joint's current intrinsic position.
+% force                    % Retrieves magnitue of force acting on joint.
 %
-% set_euler                 % Sets joint's intrinsic position.
-% set_target_velocity       % Sets joint's intrinsic target velocity. Only 
+% set_jpos                 % Sets joint's intrinsic position.
+% set_tgt_vel              % Sets joint's intrinsic target velocity. Only 
 %                             applicable if the joint motor is enabled.  
-% set_target_position       % Sets joint's target position. Only applicable
+% set_tgt_pos              % Sets joint's target position. Only applicable
 %                             if the joint motor and position control are
 %                             enabled.
 %
-% enable_mcontrol           % Enables joint motor control
-% disable_mcontrol          % Disables joint motor control
+% enable_mcontrol          % Enables joint motor control
+% disable_mcontrol         % Disables joint motor control
 %
 
 classdef sim_joint < sim_entity
@@ -35,7 +35,7 @@ classdef sim_joint < sim_entity
             
         end
         
-        function pos = euler(obj)
+        function pos = jpos(obj)
             
             pos = obj.sim.getJointPosition(obj.id);
 
@@ -53,7 +53,7 @@ classdef sim_joint < sim_entity
         
         %% Setters
         
-        function set_euler(obj,new)
+        function set_jpos(obj,new)
             
                 obj.sim.setJointPosition(obj.id,new);
             

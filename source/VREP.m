@@ -12,6 +12,18 @@
 % Wrap inputParser or switch to RTB input parser.
 %%
 
+%% Notes:
+%   To steam commands...
+%   Call desired command (eg simxGetJointPosition) with opmode_streaming
+%   No data will be returned from this call (Check returned return code as
+%   well...)
+%   Subsequent calls should be made using opmode_buffer.
+%   Using opmode_buffer or opmode_streaming returns vrep.simx_error_novalue_flag
+%   This is fine in those two particular cases, in any other opmode it
+%   indicates a problem.
+%   Have also seen an error code 3, it is not documented however.
+%%
+
 % properties
 %         clientID
 
@@ -1007,46 +1019,7 @@ classdef VREP < simulator
             
         end
         
-        function setObjIntParam(obj,target,param,new)
-            
-            r = obj.sim.simxSetObjectIntParameter(obj.clientID, target, param, new, obj.mode);
-            
-             if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-            
-        end
         
-        function setObjFloatParam(obj,target,param,new)
-            
-            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,target,param, new, obj.mode);
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-                    
-        end
-        
-        function param = getObjIntParam(obj,target,param)
-            
-            [r, param] = obj.sim.simxGetObjectIntParameter(obj.clientID,target,param,obj.mode);
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-            
-        end
-        
-        function param = getObjFloatParam(obj,target,param)
-            
-            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,target,param,obj.mode);
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-            
-            
-        end  
         
         
         function setParam(obj,target,msg,dtype)
@@ -1092,6 +1065,49 @@ classdef VREP < simulator
             
         end
         
+%% Object Parameters
+
+        function setObjIntParam(obj,target,param,new)
+            
+            r = obj.sim.simxSetObjectIntParameter(obj.clientID, target, param, new, obj.mode);
+            
+             if r ~= 0 && r ~= 1 && r ~= 3
+                throw(obj.errcheck(r))
+            end
+            
+        end
+        
+        function setObjFloatParam(obj,target,param,new)
+            
+            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,target,param, new, obj.mode);
+            
+            if r ~= 0 && r ~= 1 && r ~= 3
+                throw(obj.errcheck(r))
+            end
+                    
+        end
+        
+        function param = getObjIntParam(obj,target,param)
+            
+            [r, param] = obj.sim.simxGetObjectIntParameter(obj.clientID,target,param,obj.mode);
+            
+            if r ~= 0 && r ~= 1 && r ~= 3
+                throw(obj.errcheck(r))
+            end
+            
+        end
+        
+        function param = getObjFloatParam(obj,target,param)
+            
+            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,target,param,obj.mode);
+            
+            if r ~= 0 && r ~= 1 && r ~= 3
+                throw(obj.errcheck(r))
+            end
+            
+            
+        end  
+        
 %% Image Sensor Handling
 
         % Again, condense into one function that takes differnet modes and
@@ -1109,7 +1125,7 @@ classdef VREP < simulator
         %% TODO Add opmode_streaming support.
         function img = readVisionSensor(obj,target,varargin)
 
-            grey = false; % TODO
+            grey = false; % TODO: Optional Argument
             
             [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.sim.simx_opmode_oneshot_wait);
             
@@ -1122,8 +1138,6 @@ classdef VREP < simulator
         %% TODO Add opmode_streaming support.
         function pts = readPointVisionSensor(obj,target,varargin)
                  
-            %obj.setIntegerSignal('handle_xyz_sensor', 1);
-            %obj.setIntegerSignal('handle_xy_sensor', 1);
             [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.mode);
         
             if r ~= 0
@@ -1286,8 +1300,12 @@ classdef VREP < simulator
             j = 1;
             while true
                 
+                %% This is nasty... TODO! Replace this.
                 try
                 h = obj.getHandle(fmt, name, j-1);
+                % if h == 0
+                %   break
+                % end
                 catch ME
                    if size(id) == 0
                        rethrow(ME)
@@ -1314,6 +1332,9 @@ classdef VREP < simulator
     
         % Convert VREP error codes into human readable form
         % TODO: Handle errors dependant on the opmode used.
+        % TODO: Parse the bit coded return message to enable reporting
+        % multiple error. err = de2bi(r,6)
+        
         function e = errcheck(obj,r)
             
                 switch (r)               
@@ -1338,7 +1359,6 @@ classdef VREP < simulator
                         case obj.sim.simx_return_initialize_error_flag % Bit 6
                             msgid = 'VREP:NotStarted';
                             error = 'Please call simxStart first. This error may also occur when you have a Remote API instance already active .';
-
                     otherwise
                         msgid = 'VREP:UnknownError';
                         error = sprintf('I''m sorry Dave, I''m afraid I can''t do that. (Unknown Error Code: %d)',r);
@@ -1346,7 +1366,53 @@ classdef VREP < simulator
                     e = MException(msgid,error); 
         end
             
-    end   
+    end 
+    
+%     function e = errcheck(obj,r,b)
+%
+%           if nargin < 3
+%               b = false;
+%           end
+%
+%            a = de2bi(r,6)
+%             
+%                 switch (r)
+%                         case obj.sim.simx_error_noerror
+%                             return
+%                         case obj.sim.simx_return_novalue_flag % Bit 0
+%                             if b == true
+%                                 return
+%                             else
+%                                 msgid = 'VREP:NoReply';
+%                                 error = 'Input buffer does not contain a command reply.';
+%                         case obj.sim.simx_return_timeout_flag % Bit 1
+%                             msgid = 'VREP:Timeout';
+%                             error = 'Function timed out. Network connection is down or slow.';
+%                         case obj.sim.simx_return_illegal_opmode_flag % Bit 2
+%                             msgid = 'VREP:IllegalOperationMode';
+%                             error = 'Function does not support the use of the selected operation mode.';
+%                         case obj.sim.simx_return_remote_error_flag % Bit 3
+%                             msgid = 'VREP:ServerSideError';
+%                             error = 'Server-side function error. Check function handle is valid.';
+%                         case obj.sim.simx_return_split_progress_flag % Bit 4
+%                             msgid = 'VREP:Busy';
+%                             error = 'Previous split command is still being processed. Try an opmode that does not split commands if this is an issue.';
+%                         case obj.sim.simx_return_local_error_flag % Bit 5
+%                             msgid = 'VREP:ClientSideError';
+%                             error = 'Client-side function error.';
+%                         case obj.sim.simx_return_initialize_error_flag % Bit 6
+%                             msgid = 'VREP:NotStarted';
+%                             error = 'Please call simxStart first. This error may also occur when you have a Remote API instance already active .';
+%                     otherwise
+%                         msgid = 'VREP:UnknownError';
+%                         error = sprintf('I''m sorry Dave, I''m afraid I can''t do that. (Unknown Error Code: %d)',r);  
+%                 end
+%                      
+%         end
+%             
+%     end 
+    
+    
  
 end
    

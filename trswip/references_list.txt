@@ -1,0 +1,9 @@
+https://ocw.mit.edu/courses/aeronautics-and-astronautics/16-412j-cognitive-robotics-spring-2005/projects/1aslam_blas_repo.pdf
+https://april.eecs.umich.edu/pdfs/li2010.pdf
+https://github.com/simondlevy/BreezySLAM
+https://github.com/petercorke/robotics-toolbox-matlab
+https://github.com/petercorke/machinevision-toolbox-matlab
+https://github.com/petercorke/toolbox-common-matlab
+http://www.vlfeat.org/
+http://www.andreykurenkov.com/projects/team_projects/files/agribot/presentation.pdf
+http://robotics.itee.uq.edu.au/dokuwiki/cache/icra-rre_trs.pdf ... trs is considered a Master's level task...?

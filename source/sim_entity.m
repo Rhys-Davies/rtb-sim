@@ -38,6 +38,9 @@ classdef sim_entity < handle
         
         function obj = sim_entity(sim,ident,varargin)
             
+            % Add option to stream position and orientation
+            %
+            
             obj.sim = sim;
             if isstr(ident)
                 obj.id = obj.sim.getHandle(ident);
