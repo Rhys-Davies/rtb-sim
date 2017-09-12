@@ -78,7 +78,6 @@ classdef sim_arm < handle
             % obj.sim.pauseComms(true)
             
             for i=1:obj.numj
-               state(i)
                obj.joints(i).set_tgt_pos(state(i));
             end
             

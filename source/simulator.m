@@ -54,15 +54,6 @@ classdef (Abstract) simulator < handle
         setJointPosition(obj,handle,pos)
         setJointTargetPosition(obj,handle,pos)      
         setJointTargetVelocity(obj,handle,vel)
-      
-        %% Signal Management
-        setSignal(obj,msg,target,dtype)
-        sig = getSignal(obj,target,dtype)
-        clearSignal(obj,target,dtype)
-        
-        %% Parameter Management
-        setParam(obj,target,msg,dtype)
-        msg = getParam(obj,target,dtype)
         
         %% Image Sensor Handling
         [res,img] = readVisionSensor(obj,target)

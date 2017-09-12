@@ -36,6 +36,8 @@ classdef sim_xyz_sensor < sim_entity
            
             obj.sim.setIntegerSignal('handle_xyz_sensor',1)
             
+            pause(1)
+            
             data = obj.sim.readPointVisionSensor(obj.id);
             
             

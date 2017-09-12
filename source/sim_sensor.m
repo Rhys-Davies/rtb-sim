@@ -31,9 +31,9 @@ classdef sim_sensor < sim_entity
     
     methods
         
-        function obj = sim_sensor(sim,ident)
+        function obj = sim_sensor(sim,ident,varargin)
         
-            obj = obj@sim_entity(sim,ident);
+            obj = obj@sim_entity(sim,ident,varargin);
             
         end
         

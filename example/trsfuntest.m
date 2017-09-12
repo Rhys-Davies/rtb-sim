@@ -74,6 +74,10 @@ fsm = 'rotate';
 
 %% Start the Demo
 while true
+    
+    disp('TRS Function Test State:')
+    disp(fsm)
+    
     tic
     
     youbotPos = yb.ref.position;
@@ -241,5 +245,8 @@ while true
     end
 
 end
+
+sim.stopSim();
+sim.delete();
 
 clear all

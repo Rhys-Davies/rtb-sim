@@ -22,8 +22,9 @@ classdef sim_fast_hokuyo < sim_entity
         function obj = sim_fast_hokuyo(sim,ident,ref)
             
             obj = obj@sim_entity(sim,ident);
-            obj.sensor1 = obj.sim.xy_sensor('fastHokuyo_sensor1',true);
-            obj.sensor2 = obj.sim.xy_sensor('fastHokuyo_sensor2',true);  
+            %obj.sim.setIntegerSignal('handle_xy_sensor',2)
+            obj.sensor1 = obj.sim.xy_sensor('fastHokuyo_sensor1');
+            obj.sensor2 = obj.sim.xy_sensor('fastHokuyo_sensor2');  
             
             if nargin < 3
                 obj.transform = false;

@@ -208,6 +208,9 @@ classdef VREP < simulator
     
     properties
         mode
+        getter_mode
+        setter_mode
+        blocking_mode
     end
     
     methods
@@ -234,24 +237,29 @@ classdef VREP < simulator
             defaultcycle = 5;
             defaultwaitforconnect = true;
             defaultreconnect = true;
-            defaultpath = 'path'; % Assumes API files are in a folder currently on your MATLAB path.
-            defaultmode = obj.sim.simx_opmode_oneshot_wait;
+            %defaultpath = 'path'; % Assumes API files are in a folder currently on your MATLAB path.
+            defaultgettermode = obj.sim.simx_opmode_oneshot_wait;
+            defaultsettermode = obj.sim.simx_opmode_oneshot;
             
             addOptional(p,'IP',defaultIP,@isstring);
             addOptional(p,'PORT',defaultPORT,@isnumeric);
             addOptional(p,'timeout',defaulttimeout,@isnumeric);
-            addOptional(p,'mode',defaultmode,@isstring);
+            addOptional(p,'getter_mode',defaultgettermode,@isstring);
+            addOptional(p,'setter_mode',defaultsettermode,@isstring);
             addOptional(p,'cycle',defaultcycle,@isnumeric);
             addOptional(p,'wait',defaultwaitforconnect,@islogical); %wait for connect
             addOptional(p,'reconnect',defaultreconnect,@islogical); %reconnect on error
-            addOptional(p,'path',defaultpath,@isstring);
+            %addOptional(p,'path',defaultpath,@isstring);
             
             parse(p,varargin{:});
             
-            
+            obj.getter_mode = p.Results.getter_mode;
+            obj.setter_mode = p.Results.setter_mode;
             obj.IP = p.Results.IP;
             obj.PORT = p.Results.PORT;
             %%
+            
+            obj.blocking_mode = obj.sim.simx_opmode_blocking;
                    
             % TODO: Some path handling stuff
             
@@ -287,38 +295,39 @@ classdef VREP < simulator
             % status = 1 pauses
             % status = 0 resumes
             
-            disp('Entered Pause with status:')
-            disp(status)
+
             r = obj.sim.simxPauseCommunication(obj.clientID,status);
             
-            obj.errcheck(r)
-
+            
+           if r ~= 0 && r ~= 1
+                throw(obj.errcheck(r))
+            end
             
         end
         
         function pauseSim(obj)  
             
-            r = obj.sim.simxPauseSimulation(obj.clientID,obj.mode);
+            r = obj.sim.simxPauseSimulation(obj.clientID,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
   
         end
 
         function startSim(obj) 
-            r = obj.sim.simxStartSimulation(obj.clientID,obj.mode);
+            r = obj.sim.simxStartSimulation(obj.clientID,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
         end
         
         function stopSim(obj)
-            r = obj.sim.simxStopSimulation(obj.clientID,obj.mode);
+            r = obj.sim.simxStopSimulation(obj.clientID,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
@@ -335,9 +344,9 @@ classdef VREP < simulator
                 opt = 0; % Add documentation for opt.
             end
             
-            r = obj.sim.simxLoadScene(obj.clientID,path,opt,obj.mode);
+            r = obj.sim.simxLoadScene(obj.clientID,path,opt,obj.blocking_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -352,18 +361,18 @@ classdef VREP < simulator
                 opt = 0; % 0 for server side model, 1 for client side.
             end
             
-            [r,id] = obj.sim.simxLoadModel(obj.clientID,handle,opt,obj.mode);
+            [r,id] = obj.sim.simxLoadModel(obj.clientID,handle,opt,obj.blocking_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end            
         end
         
         function deleteSimObject(obj,handle)
             
-            r = obj.sim.simxRemoveModel(obj.clientID,handle,obj.mode);
+            r = obj.sim.simxRemoveModel(obj.clientID,handle,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         end
@@ -374,9 +383,9 @@ classdef VREP < simulator
             % created.
             
             obj.stopSim();
-            r = obj.sim.simxCloseScene(obj.clientID,obj.mode);
+            r = obj.sim.simxCloseScene(obj.clientID,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -391,7 +400,7 @@ classdef VREP < simulator
             for i = 0:n
                 [r,temp(n)] = obj.sim.simxGetPingTime(obj.clientID);
                 
-                if r ~= 0 && r ~= 1 && r ~= 3
+               if r ~= 0 && r ~= 1
                     throw(obj.errcheck(r))
                 end
                 
@@ -515,9 +524,9 @@ classdef VREP < simulator
                 end
             end
 
-            [r,objid,~,~,name] = obj.sim.simxGetObjectGroupData(obj.clientID, stype, 0, obj.mode);
+            [r,objid,~,~,name] = obj.sim.simxGetObjectGroupData(obj.clientID, stype, 0, obj.blocking_mode);
 
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
@@ -531,9 +540,9 @@ classdef VREP < simulator
                 name = sprintf(in, varargin{:});
             end
             
-            [r,handle] = obj.sim.simxGetObjectHandle(obj.clientID,name,obj.mode);
+            [r,handle] = obj.sim.simxGetObjectHandle(obj.clientID,name,obj.blocking_mode);
         
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -541,9 +550,9 @@ classdef VREP < simulator
         
         function name = getName(obj,objhandle)
             
-            [r,objid,~,~,str] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 0, obj.mode);
+            [r,objid,~,~,str] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 0, obj.blocking_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -553,9 +562,9 @@ classdef VREP < simulator
         
         function types = getTypes(obj,objhandle)
         
-            [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.mode);
+            [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.blocking_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -568,13 +577,13 @@ classdef VREP < simulator
             i = 0;
             while true
                 
-                [r,child] = obj.sim.simxGetObjectChild(obj.clientID, handle, i, obj.mode);
+                [r,child] = obj.sim.simxGetObjectChild(obj.clientID, handle, i, obj.blocking_mode);
             	
                 if child < 0
                     break
                 end
 
-                if r ~= 0 && r ~= 1 && r ~= 3
+               if r ~= 0 && r ~= 1
                     throw(obj.errcheck(r))
                 end
                 
@@ -592,9 +601,11 @@ classdef VREP < simulator
                 rel2 = -1;
             end
             
-            [r,orient] = obj.sim.simxGetObjectOrientation(obj.clientID,handle,rel2,obj.mode); 
+            opmode = obj.getter_mode;
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+            [r,orient] = obj.sim.simxGetObjectOrientation(obj.clientID,handle,rel2,opmode); 
+            
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -607,9 +618,11 @@ classdef VREP < simulator
                 rel2 = -1;
             end
         
-            [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,obj.mode);
+             opmode = obj.getter_mode;
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+            [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
+            
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -624,9 +637,9 @@ classdef VREP < simulator
                 rel2 = -1;
             end
             
-            r = obj.sim.simxSetObjectPosition(obj.clientID,handle,rel2,new,obj.mode);
+            r = obj.sim.simxSetObjectPosition(obj.clientID,handle,rel2,new,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -640,9 +653,9 @@ classdef VREP < simulator
                 rel2 = -1;
             end
                 
-            r = obj.sim.simxSetObjectOrientation(obj.clientID,handle,rel2,orient,obj.mode);
+            r = obj.sim.simxSetObjectOrientation(obj.clientID,handle,rel2,orient,obj.setter_mode);
             
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -654,10 +667,11 @@ classdef VREP < simulator
         % Returns the intrinsic position of a joint. Cannot be used with
         % spherical joints
         
+            opmode = obj.getter_mode;
+        
+            [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,opmode);
 
-            [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,obj.mode);
-
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
@@ -668,9 +682,11 @@ classdef VREP < simulator
         function matrix = getJointMatrix(obj,handle,varargin)
         % Returns the intrisic matrix of a joint.
         
-            [r,matrix] = obj.sim.simxGetJointMatrix(obj.clientID,handle,obj.mode);
+            opmode = obj.getter_mode;
+        
+            [r,matrix] = obj.sim.simxGetJointMatrix(obj.clientID,handle,opmode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -684,9 +700,11 @@ classdef VREP < simulator
         % When using the ODE or Vortex engines, returns the total force or
         % torque applied to a joint around/along its z-axis.
         
-            [r,force] = obj.sim.simxGetJointForce(obj.clientID,handle,obj.mode);
+            opmode = obj.getter_mode;
+        
+            [r,force] = obj.sim.simxGetJointForce(obj.clientID,handle,opmode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         end
@@ -695,9 +713,9 @@ classdef VREP < simulator
         % TODO: Check to make sure matrix contains 12 elements
         % Can only be used for spherical joints.
         
-            r = obj.sim.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.mode);
+            r = obj.sim.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.setter_mode);
                       
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -707,9 +725,9 @@ classdef VREP < simulator
         % Has no effect if joint is not dynamically enabled.
         % Also has no effect if joint is spherical
         
-            r = obj.sim.simxSetJointForce(obj.clientID,handle,force,obj.mode);
+            r = obj.sim.simxSetJointForce(obj.clientID,handle,force,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -719,9 +737,9 @@ classdef VREP < simulator
         % Cannot be used on spherical joints
         % May have no effect with certain joint modes
         
-            r = obj.sim.simxSetJointPosition(obj.clientID,handle,pos,obj.sim.simx_opmode_oneshot);
+            r = obj.sim.simxSetJointPosition(obj.clientID,handle,pos,obj.setter_mode);
            
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -732,9 +750,9 @@ classdef VREP < simulator
         % torque/force mode and if its motor and position control are
         % enabled
         
-            r = obj.sim.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.mode);
+            r = obj.sim.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.setter_mode);
 
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -745,9 +763,9 @@ classdef VREP < simulator
         % in torque/force mode with dynamics and joint motor enabled, and
         % position control disabled.
         
-            r = obj.sim.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.mode);
+            r = obj.sim.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -758,9 +776,9 @@ classdef VREP < simulator
  
         function sig = getIntegerSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetIntegerSignal(obj.clientID,signalName,obj.mode);
+            [r,sig] = obj.sim.simxGetIntegerSignal(obj.clientID,signalName,obj.getter_mode);
            
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -768,9 +786,9 @@ classdef VREP < simulator
 
         function sig = getFloatSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetFloatingSignal(obj.clientID,signalName,obj.mode);
+            [r,sig] = obj.sim.simxGetFloatingSignal(obj.clientID,signalName,obj.getter_mode);
            
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -778,9 +796,9 @@ classdef VREP < simulator
 
         function sig = getBooleanSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signalName,obj.mode);
+            [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signalName,obj.getter_mode);
            
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -788,9 +806,9 @@ classdef VREP < simulator
 
         function sig = getStringSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,signalName,obj.mode);
+            [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,signalName,obj.getter_mode);
         
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -798,9 +816,9 @@ classdef VREP < simulator
 
         function setIntegerSignal(obj,signalName,value)
             
-            r = obj.sim.simxSetIntegerSignal(obj.clientID,signalName,value,obj.sim.simx_opmode_oneshot_wait);
+            r = obj.sim.simxSetIntegerSignal(obj.clientID,signalName,value,obj.getter_mode);
         
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -808,9 +826,9 @@ classdef VREP < simulator
 
         function setFloatSignal(obj,signalName,value)
             
-            r = obj.sim.simxSetFloatSignal(obj.clientID,signalName,value,obj.mode);
+            r = obj.sim.simxSetFloatSignal(obj.clientID,signalName,value,obj.getter_mode);
            
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -818,9 +836,9 @@ classdef VREP < simulator
 
         function setBooleanSignal(obj,signalName,value)
             
-            r = obj.sim.simxSetBooleanSignal(obj.clientID,signalName,value,obj.mode);
+            r = obj.sim.simxSetBooleanSignal(obj.clientID,signalName,value,obj.getter_mode);
            
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -828,9 +846,9 @@ classdef VREP < simulator
 
         function setStringSignal(obj,signalName,value)
             
-            r = obj.sim.simxSetStringSignal(obj.clientID,signalName,value,obj.mode);
+            r = obj.sim.simxSetStringSignal(obj.clientID,signalName,value,obj.getter_mode);
            
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -838,9 +856,9 @@ classdef VREP < simulator
         
         function clearIntegerSignal(obj,signalName)
             
-            r = obj.sim.simxClearIntegerSignal(obj.clientID,signalName,obj.mode);
+            r = obj.sim.simxClearIntegerSignal(obj.clientID,signalName,obj.setter_mode);
            
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -848,9 +866,9 @@ classdef VREP < simulator
 
         function clearFloatSignal(obj,signalName)
                
-            r = obj.sim.simxClearFloatSignal(obj.clientID,signalName,obj.mode);
+            r = obj.sim.simxClearFloatSignal(obj.clientID,signalName,obj.setter_mode);
         
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -858,9 +876,9 @@ classdef VREP < simulator
 
         function clearBooleanSignal(obj,signalName)
             
-            r = obj.sim.simxClearBooleanSignal(obj.clientID,signalName,obj.mode);
+            r = obj.sim.simxClearBooleanSignal(obj.clientID,signalName,obj.setter_mode);
         
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -868,84 +886,22 @@ classdef VREP < simulator
 
         function clearStringSignal(obj,signalName)
             
-            r = obj.sim.simxClearStringSignal(obj.clientID,signalName,obj.mode);
+            r = obj.sim.simxClearStringSignal(obj.clientID,signalName,obj.setter_mode);
             
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
         end
         
-        function setSignal(obj,target,msg,dtype)
-            
-            switch (dtype)
-                case 'str'
-                    r = obj.sim.simxSetStringSignal(obj.clientID,target,msg,obj.mode);
-                case 'float'
-                    r = obj.sim.simxSetFloatSignal(obj.clientID,target,msg,obj.mode);
-                case 'int'
-                    r = obj.sim.simxSetIntegerSignal(obj.clientID,target,msg,obj.mode);
-                case 'bool'
-                    r = obj.sim.simxSetBooleanSignal(obj.clientID,target,msg,obj.mode);
-                otherwise 
-                    throw(MException('RTB-SIM:Method:setSignal','Unknown Datatype'))
-            end
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-            
-        end
-       
-        function sig = getSignal(obj,target,dtype)
-            
-            switch (dtype)
-                case 'str'
-                    [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,target,obj.mode);
-                case 'float'
-                    [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,target,obj.mode);
-                case 'int'
-                    [r,sig] = obj.sim.simxGetIntegerSignal(obj.clientID,target,obj.mode);
-                case 'bool'
-                    [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,target,obj.mode);
-                otherwise 
-                    throw(MException('RTB-SIM:Method:getSignal','Unknown Datatype'))
-            end
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-            
-        end
-        
-        function clearSignal(obj,target,dtype)
-        
-            switch (dtype)
-                case 'str'
-                    r = obj.sim.simxClearStringSignal(obj.clientID,target,obj.mode);
-                case 'float'
-                    r = obj.sim.simxClearFloatSignal(obj.clientID,target,obj.mode);
-                case 'int'
-                    r = obj.sim.simxClearIntegerSignal(obj.clientID,target,obj.mode);
-                case 'bool'
-                    r = obj.sim.simxClearBooleanSignal(obj.clientID,target,obj.mode);
-                otherwise 
-                    throw(MException('RTB-SIM:Method:clearSignal','Unknown Datatype'))
-            end
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-        
-        end
         
 %% Parameter Management
 
         function param = getIntegerParam(obj,target)
             
-            [r,param] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
+            [r,param] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.getter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -953,9 +909,9 @@ classdef VREP < simulator
 
         function param = getFloatParam(obj,target)
             
-            [r,param] = obj.sim.simxGetFloatingParameter(obj.clientID,target,obj.mode);
+            [r,param] = obj.sim.simxGetFloatingParameter(obj.clientID,target,obj.getter_mode);
           
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -963,9 +919,9 @@ classdef VREP < simulator
 
         function param = getBooleanParam(obj,target)
             
-            [r,param] = obj.sim.simxGetBooleanParameter(obj.clientID,target,obj.mode);
+            [r,param] = obj.sim.simxGetBooleanParameter(obj.clientID,target,obj.getter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -973,9 +929,9 @@ classdef VREP < simulator
 
         function param = getStringParam(obj,target)
             
-            [r,param] = obj.sim.simxGetStringParameter(obj.clientID,target,obj.mode);
+            [r,param] = obj.sim.simxGetStringParameter(obj.clientID,target,obj.getter_mode);
             
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -983,9 +939,9 @@ classdef VREP < simulator
 
         function setIntegerParam(obj,target, param)
             
-            r = obj.sim.simxGetIntegerParameter(obj.clientID,target,param,obj.mode);
+            r = obj.sim.simxGetIntegerParameter(obj.clientID,target,param,obj.setter_mode);
             
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -993,9 +949,9 @@ classdef VREP < simulator
 
         function setFloatParam(obj, target, param)
             
-            r = obj.sim.simxGetFloatParameter(obj.clientID,target,param,obj.mode);
+            r = obj.sim.simxGetFloatParameter(obj.clientID,target,param,obj.setter_mode);
           
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1003,9 +959,9 @@ classdef VREP < simulator
 
         function setBooleanParam(obj, target, param)
             
-            r = obj.sim.simxGetBooleanParameter(obj.clientID,target,param,obj.mode);
+            r = obj.sim.simxGetBooleanParameter(obj.clientID,target,param,obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1013,65 +969,22 @@ classdef VREP < simulator
 
         function setStringParam(obj, target, param)
             
-            r = obj.sim.simxGetStringParameter(obj.clientID,target,param,obj.mode);
+            r = obj.sim.simxGetStringParameter(obj.clientID,target,param,obj.setter_mode);
             
-            obj.errcheck(r)
-            
-        end
-        
-        
-        
-        
-        function setParam(obj,target,msg,dtype)
-        
-            switch (dtype)
-                
-                case 'str'
-                    r = obj.sim.simxSetStringParameter(obj.clientID,target,msg,obj.mode);
-                case 'float'
-                    r = obj.sim.simxSetFloatParameter(obj.clientID,target,msg,obj.mode);
-                case 'int'
-                    r = obj.sim.simxSetIntegerParameter(obj.clientID,target,msg,obj.mode);
-                case 'bool'
-                    r = obj.sim.simxSetBooleanParameter(obj.clientID,target,msg,obj.mode);
-                otherwise 
-                    throw(MException('RTB-SIM:Method:setParam','Unknown Datatype'))
-            end
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
-                throw(obj.errcheck(r))
-            end
-        
-        end
-        
-        function msg = getParam(obj,target,dtype)
-            
-            switch (dtype)
-                case 'str'
-                    [r,msg] = obj.sim.simxGetStringParameter(obj.clientID,target,obj.mode);
-                case 'float'
-                    [r,msg] = obj.sim.simxGetFloatParameter(onj.clientID,target,obj.mode);
-                case 'int'
-                    [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
-                case 'bool'
-                    [r,msg] = obj.sim.simxGetBooleanParamter(obj.clientID,target,obj.mode);
-                otherwise 
-                    throw(MException('RTB-SIM:Method:getParam','Unknown Datatype'))
-            end
-            
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
         end
+        
         
 %% Object Parameters
 
         function setObjIntParam(obj,target,param,new)
             
-            r = obj.sim.simxSetObjectIntParameter(obj.clientID, target, param, new, obj.mode);
+            r = obj.sim.simxSetObjectIntParameter(obj.clientID, target, param, new, obj.setter_mode);
             
-             if r ~= 0 && r ~= 1 && r ~= 3
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1079,9 +992,9 @@ classdef VREP < simulator
         
         function setObjFloatParam(obj,target,param,new)
             
-            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,target,param, new, obj.mode);
+            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,target,param, new, obj.setter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
                     
@@ -1089,9 +1002,9 @@ classdef VREP < simulator
         
         function param = getObjIntParam(obj,target,param)
             
-            [r, param] = obj.sim.simxGetObjectIntParameter(obj.clientID,target,param,obj.mode);
+            [r, param] = obj.sim.simxGetObjectIntParameter(obj.clientID,target,param,obj.getter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1099,9 +1012,9 @@ classdef VREP < simulator
         
         function param = getObjFloatParam(obj,target,param)
             
-            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,target,param,obj.mode);
+            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,target,param,obj.getter_mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1126,10 +1039,11 @@ classdef VREP < simulator
         function img = readVisionSensor(obj,target,varargin)
 
             grey = false; % TODO: Optional Argument
+            opmode = obj.getter_mode;
             
-            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.sim.simx_opmode_oneshot_wait);
+            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,opmode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1138,9 +1052,11 @@ classdef VREP < simulator
         %% TODO Add opmode_streaming support.
         function pts = readPointVisionSensor(obj,target,varargin)
                  
-            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.mode);
+            opmode = obj.getter_mode;
+            
+            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, opmode);
         
-            if r ~= 0
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1166,9 +1082,11 @@ classdef VREP < simulator
         %% TODO Add opmode_streaming support.
         function [res,img] = readVisionSensorDepth(obj,target,varargin)
             
-            [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,obj.sim.simx_opmode_oneshot_wait);
+            opmode = obj.getter_mode;
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+            [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,opmode);
+            
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1179,10 +1097,12 @@ classdef VREP < simulator
 %% Other sensors
         %% TODO Add opmode_streaming support.
         function [state,torque,force] = readForceSensor(obj,ident,varargin)
-        
-            [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,obj.mode);
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+            opmode = obj.getter_mode;
+        
+            [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,opmode);
+            
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1191,9 +1111,11 @@ classdef VREP < simulator
         %% TODO Add opmode_streaming support.
         function [state,point] = readProximitySensor(obj,ident,varargin)
             
-            [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,obj.mode); % [r,state,point,found_obj,found_surface] 
+            opmode = obj.getter_mode;
             
-            if r ~= 0 && r ~= 1 && r ~= 3
+            [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,opmode); % [r,state,point,found_obj,found_surface] 
+            
+           if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
