@@ -95,7 +95,9 @@ classdef sim_entity < handle
         %
         
         
-
+        % op = 'buffer', 'start_stream', 'stop_stream' ,'default'
+        % 'stream' % Boolean optional argument.
+        % 'relative' % Optional argument.
         %  p = inputParser;
         %  defaultStream = false;
         %  defaultRel = -1;
@@ -118,7 +120,7 @@ classdef sim_entity < handle
         % If stream == true && obj.stream_pos == false
         %       
         %       op == 'start_stream';
-        %       [~] = obj.sim.getPosition(obj.id,rel2,op);
+        %       [~] = obj.sim.getPosition(obj.id,rel2,op); % Call to 
         %       obj.stream_pos = true
         %       pause(0.2) % Make sure the buffer fills
         %       op == 'buffer';

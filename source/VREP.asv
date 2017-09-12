@@ -628,32 +628,27 @@ classdef VREP < simulator
             
         end
         
-           %% Experimental*: Optional streaming
-%         function pos = getPosition(obj,handle,rel2,op)
-%         % op          % Operation mode. Can be: 'buffer', 'start_stream', 'stop_stream' ,'default'  
-%
+           %% Experimental: Optional streaming
+%         function setPosition(obj,handle,rel2,op)
+%           
 %         if op == 'buffer'
-%           opmode = sim.simx_opmode_buffer;
+%
 %         elseif op == 'start_stream'
-%           opmode = sim.simx_opmode_streaming;
+%
 %         elseif op == 'stop_stream'
-%           opmode = sim.simx_opmode_discontinue;
-%         elseif op == 'default'
-%           opmode = obj.getter_mode;
-%         else
-%           error('VREP.setPosition: Invalid opmode given')
-%         end
-%                            
-%             [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
+%
+%         elseif op == 'def
+%                           
+% obj.getter_mode
+%             r = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
 %             
-%             if r ~= 0 && r ~= 1
+%            if r ~= 0 && r ~= 1
 %                 throw(obj.errcheck(r))
 %             end
 %             
 %         end
 %
-%
-%        *untested
+        
         
         %%
         

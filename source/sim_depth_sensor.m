@@ -1,6 +1,13 @@
-classdef sim_depth_sensor
-    %SIM_DEPTH_SENSOR Summary of this class goes here
-    %   Detailed explanation goes here
+%% sim_depth_sensor
+%   A depth camera that returns a greyscale image representtion relative
+%   depths of everything in the scene.
+%
+%   
+%
+%
+%
+
+classdef sim_depth_sensor < sim_sensor
     
     properties
     end

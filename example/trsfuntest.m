@@ -75,9 +75,6 @@ fsm = 'rotate';
 %% Start the Demo
 while true
     
-    disp('TRS Function Test State:')
-    disp(fsm)
-    
     tic
     
     youbotPos = yb.ref.position;
