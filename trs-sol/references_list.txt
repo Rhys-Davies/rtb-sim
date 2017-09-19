@@ -7,3 +7,5 @@ https://github.com/petercorke/toolbox-common-matlab
 http://www.vlfeat.org/
 http://www.andreykurenkov.com/projects/team_projects/files/agribot/presentation.pdf
 http://robotics.itee.uq.edu.au/dokuwiki/cache/icra-rre_trs.pdf ... trs is considered a Master's level task...?
+http://www-personal.acfr.usyd.edu.au/nebot/publications/FS_icra_2003.pdf
+https://www.mbeckler.org/coursework/2007-2008/robotics_slam.pdf

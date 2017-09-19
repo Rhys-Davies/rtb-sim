@@ -71,34 +71,63 @@ gripperHome = yb.gripper.position(yb.arm_ref.id);
 
 % Initialise state machine
 fsm = 'rotate';
+prev_wheelang = yb.get_wheel_ang;
+
+prev_timestep = 0;
 
 %% Start the Demo
 while true
     
     tic
     
+    wheelang = yb.get_wheel_ang;
+    
+    %% Would do odometry here
+%     disp(' Wheel Angles ')
+%     disp('-- line 1 prev, line 2 current --')
+%     disp(prev_wheelang)
+%     disp(wheelang)
+%     disp('-- end --')
+
+    delta_wheelang = wheelang - prev_wheelang;
+    
+    disp('--Wheel Angle Delta (radians)--')
+    disp(delta_wheelang)
+    disp('-- Prev timestep --')
+    disp(prev_timestep)
+    
+    %%
+    
+    prev_wheelang = wheelang;
+    
     youbotPos = yb.ref.position;
     youbotEuler = yb.ref.orientation;
     
-
+    [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles
+    
     if plotData
         % Read data from the Hokuyo
-        [pts, contacts] = yb.hokuyo.scan;
-        
+           
         s1 = yb.hokuyo.h1pos;
         s2 = yb.hokuyo.h2pos;
         
         % Select the points in the mesh [X, Y] that are visible, as returned by the Hokuyo.
         in = inpolygon(X, Y, [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)]);
                     
-        % Plot those points. Green dots: the visible area for the Hokuyo. Red starts: the obstacles. Red lines: the
+        % Plot those points. Green dots: the visible area for the Hokuyo. Red stars: the obstacles. Red lines: the
         % visibility range from the Hokuyo sensor. 
         % The youBot is indicated with two dots: the blue one corresponds to the rear, the red one to the Hokuyo
         % sensor position. 
         subplot(211)
-        plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
-             [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
-             0, 0, 'ob', s1(1), s1(2), 'or', s2(1), s2(2), 'or');
+%         plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
+%              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
+%              0, 0, 'ob', s1(1), s1(2), 'or', s2(1), s2(2), 'or');
+         
+         plot(pts(1, contacts), pts(2, contacts), '*r',...
+             [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'b',...
+             0, 0, 'og', s1(1), s1(2), 'ob', s2(1), s2(2), 'ob');
+         
+         
         axis([-5.5, 5.5, -5.5, 2.5]);
         axis equal;
         drawnow;
@@ -240,10 +269,10 @@ while true
     if timeleft > 0
         pause(min(timeleft, .01));
     end
-
+    
+    prev_timestep = toc;
+    
 end
 
-sim.stopSim();
-sim.delete();
 
-clear all
+sim.delete();

@@ -208,6 +208,8 @@
 classdef VREP < simulator
     
     properties
+        path
+        libpath
         mode
         getter_mode
         setter_mode
@@ -219,6 +221,9 @@ classdef VREP < simulator
             
             %vrep = remApi('remoteApi','extApi.h'); % This option requires a compiler
             obj.sim = remApi('remoteApi');
+            
+            obj.sim.simxFinish(-1);
+            
             p = inputParser;
 
             %timeout    Timeout in ms default 2000
@@ -237,7 +242,7 @@ classdef VREP < simulator
             defaultcycle = 5;
             defaultwaitforconnect = true;
             defaultreconnect = true;
-            %defaultpath = 'path'; % Assumes API files are in a folder currently on your MATLAB path.
+            defaultpath = getenv('VREP');
             defaultgettermode = obj.sim.simx_opmode_oneshot_wait;
             defaultsettermode = obj.sim.simx_opmode_oneshot;
             
@@ -249,7 +254,7 @@ classdef VREP < simulator
             addOptional(p,'cycle',defaultcycle,@isnumeric);
             addOptional(p,'wait',defaultwaitforconnect,@islogical); %wait for connect
             addOptional(p,'reconnect',defaultreconnect,@islogical); %reconnect on error
-            %addOptional(p,'path',defaultpath,@isstring);
+            addOptional(p,'path',defaultpath,@isstring);
             
             parse(p,varargin{:});
             
@@ -257,30 +262,149 @@ classdef VREP < simulator
             obj.setter_mode = p.Results.setter_mode;
             obj.IP = p.Results.IP;
             obj.PORT = p.Results.PORT;
+            path = p.Results.path;
             %%
             
             obj.blocking_mode = obj.sim.simx_opmode_blocking;
-                   
-            % TODO: Some path handling stuff
             
-            %obj.sim.simxFinish(-1);
-            obj.mode = obj.sim.simx_opmode_blocking; % Default to blocking
+            
+            %% Check if all the VREP API files are already on path
+            if ispc == true
+                file1 = exist('remoteApi.dll');
+            elseif isunix == true
+                file1 = exist('remoteApi.so');
+            elseif ismac == true
+                file1 = exist('remoteApi.dylib');
+            else
+                error('RTB-SIM:VREP:', 'Operating system not identified');
+            end
+                        
+            file2 = exist('remApi.m');
+            file3 = exist('remoteApiProto.m');
+            
+  
+            %% Prioritize specified path over any files found on path, 
+            % but if no install folder found, fall back to files already found 
+            % on MATLAB path (if any).
+            
+            if isempty(path)
+                
+                 if file1 ~= 2 || file2 ~= 2 || file3 ~= 2
+            
+                    error('RTB-SIM:VREP:API Files not Found','No or invalid VREP path given');
+                    
+                 end
+                 
+                 obj.path = 'None';
+                 
+            else
+                
+                if ~exist(path,'dir')
+                    
+                    error('RTB-SIM:VREP:Invalid Path','VREP Folder %s not found', path);
+                    
+                end
+
+                obj.path = path;
+
+                libpath = { fullfile(obj.path, 'programming', 'remoteApi')
+                    fullfile(obj.path, 'programming', 'remoteApiBindings', 'matlab', 'matlab')
+                    fullfile(obj.path, 'programming', 'remoteApiBindings', 'lib', 'lib')
+                    };
+
+                obj.libpath = libpath;
+
+                addpath( libpath{:} );
+                
+            end
+            
+            %% Initialize the simulator.
+            
             obj.clientID = obj.sim.simxStart(obj.IP,obj.PORT,p.Results.wait, ...
                 p.Results.reconnect,p.Results.timeout,p.Results.cycle);
             
+            if obj.clientID < 0
+                
+                error('RTB-SIM:VREP:Connection Failed','Connection to VREP failed!');
+                
+            end
+                  
         end
         
-%       function display(obj)
-%       
-%                       
-%       
-%       end
-
+%         function display(v)
+%             %VREP.display Display parameters
+%             %
+%             % V.display() displays the VREP parameters in compact format.
+%             %
+%             % Notes::
+%             % - This method is invoked implicitly at the command line when the result
+%             %   of an expression is a VREP object and the command has no trailing
+%             %   semicolon.
+%             %
+%             % See also VREP.char.
+%             
+%             loose = strcmp( get(0, 'FormatSpacing'), 'loose');
+%             if loose
+%                 disp(' ');
+%             end
+%             disp([inputname(1), ' = '])
+%             disp( char(v) );
+%         end % display()
+%         
+%         function s = char(obj)
+%             %VREP.char Convert to string
+%             %
+%             % V.char() is a string representation the VREP parameters in human
+%             % readable foramt.
+%             %
+%             % See also VREP.display.
+% 
+%             s = sprintf('V-REP robotic simulator interface (active=%d)', obj.checkcomms() );
+% 
+%             s = strvcat(s, sprintf('path: %s (ver %s)', obj.path, obj.version));
+%             
+%             switch obj.getter_mode
+%                 case obj.sim.simx_opmode_oneshot
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
+%                 case obj.sim.simx_opmode_oneshot_wait
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
+%                 case obj.sim.simx_opmode_streaming
+%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
+%                 case obj.sim.simx_opmode_buffer
+%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
+%             end
+%             
+%             switch obj.setter_mode
+%                 case obj.sim.simx_opmode_oneshot
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
+%                 case obj.sim.simx_opmode_oneshot_wait
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
+%                 case obj.sim.simx_opmode_streaming
+%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
+%                 case obj.sim.simx_opmode_buffer
+%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
+%             end
+%             
+%             switch obj.blocking_mode
+%                 case obj.sim.simx_opmode_oneshot
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
+%                 case obj.sim.simx_opmode_oneshot_wait
+%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
+%                 case obj.sim.simx_opmode_streaming
+%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
+%                 case obj.sim.simx_opmode_buffer
+%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
+%             end 
+% 
+%             
+%         end
 
         % Destroy the simulator object and cleanup
         function delete(obj)
             
+            obj.sim.stopSim();
             obj.sim.simxFinish(obj.clientID);
+            obj.sim.simxFinish(-1);
             obj.sim.delete();
            
         end
@@ -289,12 +413,15 @@ classdef VREP < simulator
  
          
         function pauseComms(obj,status)
-            % Pauses the communication thread, preventing it from sending
-            % data. Useful for sending multiple commands that are to be
-            % recieved and evaluated simultaniously.
-            % status = 1 pauses
-            % status = 0 resumes
-            
+        %% VREP.pauseComms
+        % Pauses the communication thread, preventing it from sending
+        % and receiving data. Useful for sending multiple commands that
+        % are to be recieved and evaluated simultaniously.
+        % 
+        % Arguments
+        %
+        %   status            % 1 or true to pause, 0 or false to resume
+        %
 
             r = obj.sim.simxPauseCommunication(obj.clientID,status);
             
@@ -306,6 +433,9 @@ classdef VREP < simulator
         end
         
         function pauseSim(obj)  
+        %% VREP.pauseSim
+        % Pauses the simulation.
+        %
             
             r = obj.sim.simxPauseSimulation(obj.clientID,obj.setter_mode);
             
@@ -316,6 +446,11 @@ classdef VREP < simulator
         end
 
         function startSim(obj) 
+        %% VREP.startSim
+        % Starts the simulation. This must be run before any other commands
+        % are called.
+        %
+            
             r = obj.sim.simxStartSimulation(obj.clientID,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
@@ -325,26 +460,65 @@ classdef VREP < simulator
         end
         
         function stopSim(obj)
+        %% VREP.stopSim
+        % Stops the simulation.
+            
             r = obj.sim.simxStopSimulation(obj.clientID,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
             
         end
         
-        function loadScene(obj,path,opt)
-            % Loads a given VREP scene. Specify opt = 1 if scene is client
-            % side, leave blank or specify opt = 0 if scene is server side.
+        function r = checkcomms(obj)
+            
+            r = obj.sim.simxGetConnectionId(obj.clientID);
+            
+        end
+        
+        
+        function loadScene(obj,scene,varargin)
+        %% VREP.loadScene
+        % Loads a specified scene.
+        %
+        %
+        %
+            
+            p = inputParser;
+            defaultFN = obj.path;
+            defaultLoc = false;
+            
+            addOptional(p,'fn',defaultFN,@isstring);
+            addOptional(p,'local',defaultLoc,@islogical);
+            
+            parse(p,varargin{:});
+            
+            a = p.Results.fn;
+            b = p.Results.local;
+            
+            if ~strcmp(a,'None')
+                
+                error('RTB-SIM:VREP:','loadSimObject path error');
+                
+            else    
+                
+               if ~b
+                   
+                   if scene(1) ~= '/'
+                       
+                       scene = fullfile(obj.path, 'models', [scene '.ttm']);
+                       
+                   end
+                   
+               end
+                   
+            end
             
             obj.stopSim();
             
-            if nargin < 3
-                opt = 0; % Add documentation for opt.
-            end
-            
-            r = obj.sim.simxLoadScene(obj.clientID,path,opt,obj.blocking_mode);
+            r = obj.sim.simxLoadScene(obj.clientID,scene,b,obj.blocking_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -352,29 +526,64 @@ classdef VREP < simulator
             
         end
         
-        function id = loadSimObject(obj,handle,opt)
-            % Loads an object/model into the currently open scene. Specify
-            % opt = 1 if file is client side, leave blank or specify opt =
-            % 0 if file is server side.
+        function id = loadSimObject(obj,model,varargin)
+        %% VREP.loadSimObject
+        % Loads an object/model into the currently open scene. Specify
+        % opt = 1 if file is client side, leave blank or specify opt =
+        % 0 if file is server side.
             
-            if nargin < 3
-                opt = 0; % 0 for server side model, 1 for client side.
+            p = inputParser;
+            defaultFN = obj.path;
+            defaultLoc = false;
+            
+            addOptional(p,'fn',defaultFN,@isstring);
+            addOptional(p,'local',defaultLoc,@islogical);
+            
+            parse(p,varargin{:});
+            
+            a = p.Results.fn;
+            b = p.Results.local;
+            
+            if ~strcmp(a,'None')
+                
+                error('RTB-SIM:VREP:','loadSimObject path error');
+                
+            else    
+                
+               if ~b
+                   
+                   if model(1) ~= '/'
+                       
+                       model = fullfile(obj.path, 'models', [model '.ttm']);
+                       
+                   end
+                   
+               end
+                   
             end
             
-            [r,id] = obj.sim.simxLoadModel(obj.clientID,handle,opt,obj.blocking_mode);
+            [r,id] = obj.sim.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
-            end            
+            end    
+            
+            pause(0.5)
+            
         end
         
         function deleteSimObject(obj,handle)
+        %% VREP.deleteSimObject
+        % Deletes an object with a given handle from currently active V-REP
+        % scene.
+        %
             
             r = obj.sim.simxRemoveModel(obj.clientID,handle,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
-            end
+           end
+            
         end
         
         function closeScene(obj)
@@ -415,12 +624,19 @@ classdef VREP < simulator
         
         
         function [objid,name] = getObjects(obj,type)      
-                
+        %% VREP.getObjects
         % Show a list of all objects in the scene. Optionally specify a
         % particular type of object to return only objects of that type.
-        
+        % 
+        % Arguments:
+        %
+        %   type            % Optionally specifies a type of object to
+        %                     return.
+        %
+        % The following object types are valid:
+        %
         % -----------------
-        % Object Types:
+        % Major Object Types:
         % -----------------
         % shape - sim_object_shape_type
         % joint - sim_object_joint_type
@@ -533,6 +749,18 @@ classdef VREP < simulator
         end        
         
         function [handle] = getHandle(obj, in, varargin)
+        %% VREP.getHandle
+        % Retrieves the V-REP identifier of an object given its string
+        % name.
+        %
+        % Arguments:
+        %
+        %   in          % The string name
+        %   
+        % Optional Arguments
+        %
+        %   
+        %
             
             if nargin < 3
                 name = in;
@@ -549,6 +777,14 @@ classdef VREP < simulator
         end      
         
         function name = getName(obj,objhandle)
+        %% VREP.getName
+        %
+        %
+        %
+        %
+        %
+        %
+            
             
             [r,objid,~,~,str] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 0, obj.blocking_mode);
             
@@ -561,6 +797,12 @@ classdef VREP < simulator
         end
         
         function types = getTypes(obj,objhandle)
+        %% VREP.getTypes
+        %
+        %
+        %
+        %
+        %
         
             [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.blocking_mode);
             
@@ -573,6 +815,13 @@ classdef VREP < simulator
         end
         
         function children = getChildren(obj,handle)
+        %% VREP.getChildren
+        %
+        %
+        %
+        %
+        %
+        %
             
             i = 0;
             while true
@@ -583,7 +832,7 @@ classdef VREP < simulator
                     break
                 end
 
-               if r ~= 0 && r ~= 1
+                if r ~= 0 && r ~= 1
                     throw(obj.errcheck(r))
                 end
                 
@@ -596,6 +845,11 @@ classdef VREP < simulator
         
         %% TODO Add opmode_streaming support.
         function orient = getOrientation(obj,handle,rel2,varargin)
+        %% VREP.getOrientation
+        %
+        %
+        %
+        %
                         
             if nargin < 3
                 rel2 = -1;
@@ -605,24 +859,30 @@ classdef VREP < simulator
             
             [r,orient] = obj.sim.simxGetObjectOrientation(obj.clientID,handle,rel2,opmode); 
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
         end
             
-        %% TODO Add opmode_streaming support.
-        function pos = getPosition(obj,handle,rel2,varargin)
+        % TODO Add opmode_streaming support.
+        function pos = getPosition(obj,handle,rel2)
+        %% VREP.getPosition
+        %
+        %
+        %
+        %
+        %
             
             if nargin < 3
                 rel2 = -1;
             end
         
-             opmode = obj.getter_mode;
+            opmode = obj.getter_mode;
             
             [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -631,7 +891,7 @@ classdef VREP < simulator
            %% Experimental*: Optional streaming
 %         function pos = getPosition(obj,handle,rel2,op)
 %         % op          % Operation mode. Can be: 'buffer', 'start_stream', 'stop_stream' ,'default'  
-%
+% 
 %         if op == 'buffer'
 %           opmode = sim.simx_opmode_buffer;
 %         elseif op == 'start_stream'
@@ -651,8 +911,8 @@ classdef VREP < simulator
 %             end
 %             
 %         end
-%
-%
+
+
 %        *untested
         
         %%
@@ -667,7 +927,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxSetObjectPosition(obj.clientID,handle,rel2,new,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -702,7 +962,7 @@ classdef VREP < simulator
         
             [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,opmode);
 
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
 
@@ -717,7 +977,7 @@ classdef VREP < simulator
         
             [r,matrix] = obj.sim.simxGetJointMatrix(obj.clientID,handle,opmode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -735,7 +995,7 @@ classdef VREP < simulator
         
             [r,force] = obj.sim.simxGetJointForce(obj.clientID,handle,opmode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         end
@@ -746,7 +1006,7 @@ classdef VREP < simulator
         
             r = obj.sim.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.setter_mode);
                       
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -758,7 +1018,7 @@ classdef VREP < simulator
         
             r = obj.sim.simxSetJointForce(obj.clientID,handle,force,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -770,7 +1030,7 @@ classdef VREP < simulator
         
             r = obj.sim.simxSetJointPosition(obj.clientID,handle,pos,obj.setter_mode);
            
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -783,7 +1043,7 @@ classdef VREP < simulator
         
             r = obj.sim.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.setter_mode);
 
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -796,7 +1056,7 @@ classdef VREP < simulator
         
             r = obj.sim.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -809,7 +1069,7 @@ classdef VREP < simulator
             
             [r,sig] = obj.sim.simxGetIntegerSignal(obj.clientID,signalName,obj.getter_mode);
            
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -829,7 +1089,7 @@ classdef VREP < simulator
             
             [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signalName,obj.getter_mode);
            
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -879,7 +1139,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxSetStringSignal(obj.clientID,signalName,value,obj.getter_mode);
            
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
            
@@ -899,7 +1159,7 @@ classdef VREP < simulator
                
             r = obj.sim.simxClearFloatSignal(obj.clientID,signalName,obj.setter_mode);
         
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -909,7 +1169,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxClearBooleanSignal(obj.clientID,signalName,obj.setter_mode);
         
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
         
@@ -932,7 +1192,7 @@ classdef VREP < simulator
             
             [r,param] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.getter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -942,7 +1202,7 @@ classdef VREP < simulator
             
             [r,param] = obj.sim.simxGetFloatingParameter(obj.clientID,target,obj.getter_mode);
           
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -952,7 +1212,7 @@ classdef VREP < simulator
             
             [r,param] = obj.sim.simxGetBooleanParameter(obj.clientID,target,obj.getter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -982,7 +1242,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxGetFloatParameter(obj.clientID,target,param,obj.setter_mode);
           
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -992,7 +1252,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxGetBooleanParameter(obj.clientID,target,param,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1002,7 +1262,7 @@ classdef VREP < simulator
             
             r = obj.sim.simxGetStringParameter(obj.clientID,target,param,obj.setter_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             

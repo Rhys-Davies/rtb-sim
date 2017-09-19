@@ -1,5 +1,9 @@
 # rtb-sim
 
+## Dependencies
+
+    Peter Corke's Robotics Toolbox for MATLAB is required.
+
 ## Installation
 
     Clone, or download as zip and extract, into a folder on your MATLAB path.
@@ -25,4 +29,3 @@
     The contents of the /trs folder are from the TRS Task github repository.
     https://github.com/ULgRobotics/trs
     All files copyright © their original owners.
-
