@@ -6,21 +6,11 @@
 
 
 %% TODO!!
-% Stop ignoring return code 1, but only throw error if not using
-% opmode_buffer.
-% Also need to know when a command is set to stream and use opmode_buffer
-% instead of the currently set opmode.
-%%
+% Force Sensor
+% Move any VREP specific signal calls or data processing into the methods in this file.  
+%
 
 %% Notes:
-%   To steam commands...
-%   Call desired command (eg simxGetJointPosition) with opmode_streaming
-%   No data will be returned from this call (Check returned return code as
-%   well...)
-%   Subsequent calls should be made using opmode_buffer.
-%   Using opmode_buffer or opmode_streaming returns vrep.simx_error_novalue_flag
-%   This is fine in those two particular cases, in any other opmode it
-%   indicates a problem.
 %   Return codes can be returned as any combination of bits... error
 %   catching method needs a rewrite.
 %%
@@ -331,78 +321,78 @@ classdef VREP < simulator
                   
         end
         
-%         function display(v)
-%             %VREP.display Display parameters
-%             %
-%             % V.display() displays the VREP parameters in compact format.
-%             %
-%             % Notes::
-%             % - This method is invoked implicitly at the command line when the result
-%             %   of an expression is a VREP object and the command has no trailing
-%             %   semicolon.
-%             %
-%             % See also VREP.char.
-%             
-%             loose = strcmp( get(0, 'FormatSpacing'), 'loose');
-%             if loose
-%                 disp(' ');
-%             end
-%             disp([inputname(1), ' = '])
-%             disp( char(v) );
-%         end % display()
-%         
-%         function s = char(obj)
-%             %VREP.char Convert to string
-%             %
-%             % V.char() is a string representation the VREP parameters in human
-%             % readable foramt.
-%             %
-%             % See also VREP.display.
-% 
-%             s = sprintf('V-REP robotic simulator interface (active=%d)', obj.checkcomms() );
-% 
-%             s = strvcat(s, sprintf('path: %s (ver %s)', obj.path, obj.version));
-%             
-%             switch obj.getter_mode
-%                 case obj.sim.simx_opmode_oneshot
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
-%                 case obj.sim.simx_opmode_oneshot_wait
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
-%                 case obj.sim.simx_opmode_streaming
-%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
-%                 case obj.sim.simx_opmode_buffer
-%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
-%             end
-%             
-%             switch obj.setter_mode
-%                 case obj.sim.simx_opmode_oneshot
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
-%                 case obj.sim.simx_opmode_oneshot_wait
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
-%                 case obj.sim.simx_opmode_streaming
-%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
-%                 case obj.sim.simx_opmode_buffer
-%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
-%             end
-%             
-%             switch obj.blocking_mode
-%                 case obj.sim.simx_opmode_oneshot
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot (non-blocking)');
-%                 case obj.sim.simx_opmode_oneshot_wait
-%                     s = strvcat(s, 'mode: simx_opmode_oneshot_wait (blocking)');
-%                 case obj.sim.simx_opmode_streaming
-%                     s = strvcat(s, 'mode: simx_opmode_streaming (non-blocking)');
-%                 case obj.sim.simx_opmode_buffer
-%                     s = strvcat(s, 'mode: simx_opmode_buffer (non-blocking)');
-%             end 
-% 
-%             
-%         end
+        function display(obj)
+            %VREP.display Display parameters
+            %
+            % V.display() displays the VREP parameters in compact format.
+            %
+            % Notes::
+            % - This method is invoked implicitly at the command line when the result
+            %   of an expression is a VREP object and the command has no trailing
+            %   semicolon.
+            %
+            % See also VREP.char.
+            
+            loose = strcmp( get(0, 'FormatSpacing'), 'loose');
+            if loose
+                disp(' ');
+            end
+            disp([inputname(1), ' = '])
+            disp( char(v) );
+        end 
+        
+        function s = char(obj)
+            %VREP.char Convert to string
+            %
+            % V.char() is a string representation the VREP parameters in human
+            % readable foramt.
+            %
+            % See also VREP.display.
+
+            s = sprintf('V-REP robotic simulator interface (active=%d)', obj.checkcomms() );
+
+            s = strvcat(s, sprintf('path: %s ', obj.path));
+            
+            switch obj.getter_mode
+                case obj.sim.simx_opmode_oneshot
+                    s = strvcat(s, 'Getter mode: simx_opmode_oneshot (non-blocking)');
+                case obj.sim.simx_opmode_oneshot_wait
+                    s = strvcat(s, 'Getter mode: simx_opmode_oneshot_wait (blocking)');
+                case obj.sim.simx_opmode_streaming
+                    s = strvcat(s, 'Getter mode: simx_opmode_streaming (non-blocking)');
+                case obj.sim.simx_opmode_buffer
+                    s = strvcat(s, 'Getter mode: simx_opmode_buffer (non-blocking)');
+            end
+            
+            switch obj.setter_mode
+                case obj.sim.simx_opmode_oneshot
+                    s = strvcat(s, 'Setter mode: simx_opmode_oneshot (non-blocking)');
+                case obj.sim.simx_opmode_oneshot_wait
+                    s = strvcat(s, 'Setter mode: simx_opmode_oneshot_wait (blocking)');
+                case obj.sim.simx_opmode_streaming
+                    s = strvcat(s, 'Setter mode: simx_opmode_streaming (non-blocking)');
+                case obj.sim.simx_opmode_buffer
+                    s = strvcat(s, 'Setter mode: simx_opmode_buffer (non-blocking)');
+            end
+            
+            switch obj.blocking_mode
+                case obj.sim.simx_opmode_oneshot
+                    s = strvcat(s, 'Blocking mode: simx_opmode_oneshot (non-blocking)');
+                case obj.sim.simx_opmode_oneshot_wait
+                    s = strvcat(s, 'Blocking mode: simx_opmode_oneshot_wait (blocking)');
+                case obj.sim.simx_opmode_streaming
+                    s = strvcat(s, 'Blocking mode: simx_opmode_streaming (non-blocking)');
+                case obj.sim.simx_opmode_buffer
+                    s = strvcat(s, 'Blocking mode: simx_opmode_buffer (non-blocking)');
+            end 
+
+            
+        end
 
         % Destroy the simulator object and cleanup
         function delete(obj)
             
-            obj.sim.stopSim();
+
             obj.sim.simxFinish(obj.clientID);
             obj.sim.simxFinish(-1);
             obj.sim.delete();
@@ -498,9 +488,9 @@ classdef VREP < simulator
             a = p.Results.fn;
             b = p.Results.local;
             
-            if ~strcmp(a,'None')
+            if ~strcmp(a,'None') && ~b
                 
-                error('RTB-SIM:VREP:','loadSimObject path error');
+                error('RTB-SIM:VREP:','A full path to scene must be given if using API files on path.');
                 
             else    
                 
@@ -544,9 +534,9 @@ classdef VREP < simulator
             a = p.Results.fn;
             b = p.Results.local;
             
-            if ~strcmp(a,'None')
+            if ~strcmp(a,'None') && ~b
                 
-                error('RTB-SIM:VREP:','loadSimObject path error');
+                error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
                 
             else    
                 
@@ -888,34 +878,6 @@ classdef VREP < simulator
             
         end
         
-           %% Experimental*: Optional streaming
-%         function pos = getPosition(obj,handle,rel2,op)
-%         % op          % Operation mode. Can be: 'buffer', 'start_stream', 'stop_stream' ,'default'  
-% 
-%         if op == 'buffer'
-%           opmode = sim.simx_opmode_buffer;
-%         elseif op == 'start_stream'
-%           opmode = sim.simx_opmode_streaming;
-%         elseif op == 'stop_stream'
-%           opmode = sim.simx_opmode_discontinue;
-%         elseif op == 'default'
-%           opmode = obj.getter_mode;
-%         else
-%           error('VREP.setPosition: Invalid opmode given')
-%         end
-%                            
-%             [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
-%             
-%             if r ~= 0 && r ~= 1
-%                 throw(obj.errcheck(r))
-%             end
-%             
-%         end
-
-
-%        *untested
-        
-        %%
         
         function setPosition(obj,handle,new,rel2)
             % rel2 = -1 for global frame
@@ -953,7 +915,7 @@ classdef VREP < simulator
         end
         
 %%      Joint Specific Methods
-        %% TODO Add opmode_streaming support.
+
         function pos = getJointPosition(obj,handle,varargin)
         % Returns the intrinsic position of a joint. Cannot be used with
         % spherical joints
@@ -983,7 +945,7 @@ classdef VREP < simulator
         
         end
         
-        %% TODO Add opmode_streaming support.
+
         function force = getJointForce(obj,handle,varargin)
         % For prismatic and revolute joints only
         % When using the bullet physics engine, returns force or torque
@@ -1326,7 +1288,7 @@ classdef VREP < simulator
 %         [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
         
         
-        %% TODO Add opmode_streaming support.
+
         function img = readVisionSensor(obj,target,varargin)
 
             grey = false; % TODO: Optional Argument
@@ -1340,7 +1302,7 @@ classdef VREP < simulator
             
         end
         
-        %% TODO Add opmode_streaming support.
+
         function pts = readPointVisionSensor(obj,target,varargin)
                  
             opmode = obj.getter_mode;
@@ -1369,8 +1331,7 @@ classdef VREP < simulator
         
         end
         
-        
-        %% TODO Add opmode_streaming support.
+
         function [res,img] = readVisionSensorDepth(obj,target,varargin)
             
             opmode = obj.getter_mode;
@@ -1386,7 +1347,7 @@ classdef VREP < simulator
         
 
 %% Other sensors
-        %% TODO Add opmode_streaming support.
+
         function [state,torque,force] = readForceSensor(obj,ident,varargin)
             
             opmode = obj.getter_mode;
@@ -1399,7 +1360,7 @@ classdef VREP < simulator
             
         end
         
-        %% TODO Add opmode_streaming support.
+
         function [state,point] = readProximitySensor(obj,ident,varargin)
             
             opmode = obj.getter_mode;
@@ -1415,50 +1376,50 @@ classdef VREP < simulator
         
 %% Simulation Objects
 
-        function out = entity(obj,ident,varargin)
+        function out = entity(obj,ident)
             
             out = sim_entity(obj,ident);
 
         end
         
-        function out = joint(obj,ident,varargin)
+        function out = joint(obj,ident)
             
-            out = sim_joint(obj,ident,varargin);
+            out = sim_joint(obj,ident);
             
         end
                 
-        function out = rgb_sensor(obj,ident,varargin)
+        function out = rgb_sensor(obj,ident)
             
-            out = sim_rgb_sensor(obj,ident,varargin);
-            
-        end
-        
-        function out = xyz_sensor(obj,ident,varargin)
-            
-            out = sim_xyz_sensor(obj,ident,varargin);
+            out = sim_rgb_sensor(obj,ident);
             
         end
         
-        function out = xy_sensor(obj,ident,varargin)
+        function out = xyz_sensor(obj,ident)
+            
+            out = sim_xyz_sensor(obj,ident);
+            
+        end
+        
+        function out = xy_sensor(obj,ident)
             
 
-            out = sim_xy_sensor(obj,ident,varargin);
+            out = sim_xy_sensor(obj,ident);
         
         end
         
-        function out = rgbdCamera(obj,ident,varargin)
+        function out = rgbdCamera(obj,ident)
             
-            out = sim_cameraRGBD(obj,ident,varargin);
+            out = sim_cameraRGBD(obj,ident);
         
         end
         
-        function out = forceSensor(obj,ident,breakable,varargin)
+        function out = forceSensor(obj,ident,breakable)
             
             error('Not Implemented')
             
         end
         
-        function out = hokuyo(obj,ident,ref,varargin)
+        function out = hokuyo(obj,ident,ref)
 
             
              
@@ -1471,7 +1432,7 @@ classdef VREP < simulator
         end
         
         
-        function out = arm(obj,ident,fmt,varargin)
+        function out = arm(obj,ident,fmt)
 
             if nargin < 3
                 [list,num] = obj.armhelper(ident);

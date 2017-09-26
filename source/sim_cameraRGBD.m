@@ -25,9 +25,9 @@ classdef sim_cameraRGBD < sim_entity
         
         function obj = sim_cameraRGBD(sim,ident,varargin)
             
-            obj = obj@sim_entity(sim,ident,varargin);
-            obj.rgbsensor = obj.sim.rgb_sensor('rgbSensor',varargin);
-            obj.xyzsensor = obj.sim.xyz_sensor('xyzSensor',varargin);
+            obj = obj@sim_entity(sim,ident);
+            obj.rgbsensor = obj.sim.rgb_sensor('rgbSensor');
+            obj.xyzsensor = obj.sim.xyz_sensor('xyzSensor');
             
         end
         

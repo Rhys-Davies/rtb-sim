@@ -34,7 +34,7 @@ classdef sim_xyz_sensor < sim_entity
         
         function data = grab(obj)
            
-            obj.sim.setIntegerSignal('handle_xyz_sensor',1)
+            obj.sim.setIntegerSignal('handle_xyz_sensor',1) 
             
             pause(1)
             

@@ -38,9 +38,9 @@ classdef sim_rgb_sensor < sim_entity
         %   grey               % Boolean. When true a greyscale image will
         %                        be returned.
            
-            grey = false; %TODO
+            grey = false; %TODO: Check if gazebo camera has a flag for greyscale
             
-            obj.sim.setIntegerSignal('handle_rgb_sensor',1);
+            obj.sim.setIntegerSignal('handle_rgb_sensor',1); % Move this out
             
             data = obj.sim.readVisionSensor(obj.id,grey);
             

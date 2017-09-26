@@ -29,7 +29,7 @@ classdef sim_joint < sim_entity
     
     methods
         
-        function obj = sim_joint(sim,ident,varargin)
+        function obj = sim_joint(sim,ident)
     
             obj = obj@sim_entity(sim,ident);
             

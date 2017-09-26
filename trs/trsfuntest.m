@@ -101,7 +101,7 @@ while true
     prev_wheelang = wheelang;
     
     youbotPos = yb.ref.position;
-    youbotEuler = yb.ref.orientation;
+    youbotOrient = yb.ref.orientation;
     
     [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles
     
@@ -143,16 +143,16 @@ while true
         case 'rotate' 
             %% First, rotate the robot to go to one table.             % The rotation velocity depends on the difference between the current angle and the target. 
             
-            rotVel = angdiff(angl, youbotEuler(3));
+            rotVel = angdiff(angl, youbotOrient(3));
 
             % When the rotation is done (with a sufficiently high precision), move on to the next state. 
-            if (abs(angdiff(angl, youbotEuler(3))) < .1 / 180 * pi) && ...
-                    (abs(angdiff(prevOri, youbotEuler(3))) < .01 / 180 * pi)
+            if (abs(angdiff(angl, youbotOrient(3))) < .1 / 180 * pi) && ...
+                    (abs(angdiff(prevOri, youbotOrient(3))) < .01 / 180 * pi)
                 rotVel = 0;
                 fsm = 'drive';
             end
 
-            prevOri = youbotEuler(3);   
+            prevOri = youbotOrient(3);   
         case 'drive'
             %% Then, make it move straight ahead until it reaches the table. 
             % The further the robot, the faster it drives. (Only check for the first dimension.)

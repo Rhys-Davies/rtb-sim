@@ -124,10 +124,10 @@ classdef sim_TRS_youBot < sim_entity
             obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
             obj.mo_ctrl = yb_motion_controller(20,12,10,4,0.05);
             
-            wjoints(1) = obj.sim.joint('rollingJoint_fl',true); % stream
-            wjoints(2) = obj.sim.joint('rollingJoint_rl',true); % stream
-            wjoints(3) = obj.sim.joint('rollingJoint_rr',true); % stream
-            wjoints(4) = obj.sim.joint('rollingJoint_fr',true); % stream           
+            wjoints(1) = obj.sim.joint('rollingJoint_fl'); % stream
+            wjoints(2) = obj.sim.joint('rollingJoint_rl'); % stream
+            wjoints(3) = obj.sim.joint('rollingJoint_rr'); % stream
+            wjoints(4) = obj.sim.joint('rollingJoint_fr'); % stream           
             obj.wheels = wjoints;
             
                        

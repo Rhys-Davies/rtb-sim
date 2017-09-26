@@ -43,28 +43,6 @@ classdef sim_entity < handle
         function obj = sim_entity(sim,ident,varargin)
             
             % Add option to stream position and orientation
-            
-%              p = inputParser;
-%              
-%              stream_pos_default = 'None';
-%              stream_orient_default = 'None';
-%              
-%              stream_pos_rel2_default = -1;
-%              stream_pos_rel2_default = -1;
-%              
-%              addOptional(p,'Stream_Pos',stream_pos_default);
-%              addOptional(p,'Stream_Orient',stream_orient_default);
-%              
-%              addOptional(p,'Stream_Pos_Relto',stream_pos_rel2_default);
-%              addOptional(p,'Stream_Orient_Relto',stream_pos_rel2_default);
-%              
-%              parse(p,varargin(:));
-%              
-%              obj.stream_pos = p.Results.Stream_Pos;
-%              obj.stream_orient = p.Results.Stream_Orient;
-%              obj.stream_pos_rel2 = p.Results.Stream_Orient_Relto;
-%              obj.stream_orient_rel2 = p.Results.Stream_Orient_Relto;
-             
              
             obj.sim = sim;
             if isstr(ident)
@@ -122,57 +100,6 @@ classdef sim_entity < handle
             
             
         end
-        
-        
-        
-        
-          
-%         function out = position(obj,rel2,varargin) % position(obj,varargin)
-%         %% sim_entity.position
-%         % Returns [x,y,z] positions of the item 
-%         %        
-%         % Optional Arguments:
-%         %           
-%         % 'stream'          % A boolean value. Stream this attribute to buffer. Use this
-%         %                     where blocking for a return value is too slow. 
-%         %          
-% 
-%              p = inputParser;
-%              defaultStream = false;
-%              addOptional(p,'stream',defaultStream,@islogical);
-%              parse(p,varargin(:));
-%              stream = p.Results.stream;
-% 
-%             if isa(rel2,'sim_entity')
-%                   rel2 = rel2.id;
-%             end
-% 
-%             if stream == true && obj.stream_pos == false
-% 
-%                   op = 'start_stream';
-%                   [~] = obj.sim.getPosition(obj.id,rel2,op);
-%                   obj.stream_pos = true;
-%                   pause(0.2) % Make sure the buffer fills
-%                   op = 'buffer';
-% 
-%             elseif stream == true && obj.stream_pos == true
-% 
-%                   op = 'buffer';
-% 
-%             elseif stream == false && obj.stream_pos == true
-% 
-%                   op = 'stop_stream';
-%                   obj.stream_pos = false;
-% 
-%             else
-% 
-%                   op = 'default';
-%             end
-% 
-% 
-%             out = obj.sim.getPosition(obj.id,rel2,op); 
-%             
-%         end
         
         
         function out = orientation(obj,rel2)

@@ -54,7 +54,7 @@ classdef sim_sensor < sim_entity
         % Gets the FOV of the sensor.
             
             % f = obj.getObjFloatParam('sim_visionfloatparam_perspective_angle',obj.id);
-            f = obj.getFloatParam('sim_visionfloatparam_perspective_angle');
+            f = obj.getFloatParam('sim_visionfloatparam_perspective_angle'); % This will need to be something like obj.sim.getCamFOV or similar
         
         end
         
