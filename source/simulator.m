@@ -29,8 +29,8 @@ classdef (Abstract) simulator < handle
         startSim(obj) 
         stopSim(obj)
         loadScene(obj,path,opt)
-        id = loadSimObject(obj,handle,opt)
-        deleteSimObject(obj,handle)
+        id = loadObject(obj,handle,opt)
+        deleteObject(obj,handle)
         closeScene(obj)
         time = pingSim(obj,n)
         

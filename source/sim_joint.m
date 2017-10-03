@@ -8,10 +8,10 @@
 %       
 % Methods:
 %
-% jpos                     % Retrieves joint's current intrinsic position.
+% angl                     % Retrieves joint's current intrinsic position.
 % force                    % Retrieves magnitue of force acting on joint.
 %
-% set_jpos                 % Sets joint's intrinsic position.
+% set_angl                 % Sets joint's intrinsic position.
 % set_tgt_vel              % Sets joint's target velocity. Only 
 %                             applicable if the joint motor is enabled.  
 % set_tgt_pos              % Sets joint's target position. Only applicable
@@ -35,7 +35,7 @@ classdef sim_joint < sim_entity
             
         end
         
-        function pos = jpos(obj)
+        function pos = angl(obj)
             
             pos = obj.sim.getJointPosition(obj.id);
 
@@ -53,7 +53,7 @@ classdef sim_joint < sim_entity
         
         %% Setters
         
-        function set_jpos(obj,new)
+        function set_angl(obj,new)
             
                 obj.sim.setJointPosition(obj.id,new);
             

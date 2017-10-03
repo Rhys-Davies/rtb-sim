@@ -40,17 +40,6 @@
 %                             motors and motor control enabled. Valid modes
 %                             are 0, 1, and 2.
 %
-%   
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
 
 
 %% Notes: The Vehicle class as used by RTB EKF.
@@ -112,22 +101,23 @@ classdef sim_TRS_youBot < sim_entity
     methods
         
         function obj = sim_TRS_youBot(sim,ident)
-        
-            obj = obj@sim_entity(sim,ident);
-            obj.arm = obj.sim.arm('youBot','%sArmJoint%d'); % stream
-            obj.arm.enable_control;
-            obj.gripper = obj.sim.entity('youBot_gripperPositionTip'); % stream
-            obj.gripper_target = obj.sim.entity('youBot_gripperPositionTarget'); % stream
-            obj.ref = obj.sim.entity('youBot_center'); % stream
-            obj.arm_ref = obj.sim.entity('youBot_ref'); % stream
-            obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref); % stream
-            obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
-            obj.mo_ctrl = yb_motion_controller(20,12,10,4,0.05);
             
-            wjoints(1) = obj.sim.joint('rollingJoint_fl'); % stream
-            wjoints(2) = obj.sim.joint('rollingJoint_rl'); % stream
-            wjoints(3) = obj.sim.joint('rollingJoint_rr'); % stream
-            wjoints(4) = obj.sim.joint('rollingJoint_fr'); % stream           
+            obj = obj@sim_entity(sim,ident);
+            obj.arm = obj.sim.arm('youBot','%sArmJoint%d');
+            obj.arm.enable_control;
+            obj.gripper = obj.sim.entity('youBot_gripperPositionTip');
+            obj.gripper_target = obj.sim.entity('youBot_gripperPositionTarget');
+            obj.ref = obj.sim.entity('youBot_center');
+            obj.arm_ref = obj.sim.entity('youBot_ref');
+            obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
+            obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
+            obj.mo_ctrl = yb_motion_controller(15,12,5,4,0.04); % pParam, maxV, pParamRot, maxVRot, accelF
+            obj.mo_ctrl.update(0,0,0);
+            
+            wjoints(1) = obj.sim.joint('rollingJoint_fl');
+            wjoints(2) = obj.sim.joint('rollingJoint_rl');
+            wjoints(3) = obj.sim.joint('rollingJoint_rr');
+            wjoints(4) = obj.sim.joint('rollingJoint_fr');          
             obj.wheels = wjoints;
             
                        

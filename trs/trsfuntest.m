@@ -12,24 +12,6 @@ clc
 % Distributed under the GNU General Public License.
 % (See http://www.gnu.org/copyleft/gpl.html)
 
-
-%%
-%
-% Weird driving behaviour is because of opmodes. Not in streaming mode, so
-% delay time makes controller react slowly.
-% Joint position. Object position + orientation. Reading sensors.
-% Worth noting: Calls using opmode_streaming do not return data from the
-% buffer. All subsequent calls must use simx_opmode_buffer. To stop
-% streaming a call must be made using simx_opmode_discontinue.
-%
-% Will need to implement an argument for overriding opmode to make pausing
-% communications, sending a number of commands, then unpausing possible.
-%
-% Ideally, setters should use opmode_oneshot.
-% Getters that are not streaming should use oneshot_wait
-%
-%%
-
 sim = VREP(); % Default is to attempt connection to localhost
 yb = sim.youbot('youBot'); % TRS youBot is a modified version of the stock VREP one.
 sim.startSim();
@@ -79,26 +61,6 @@ prev_timestep = 0;
 while true
     
     tic
-    
-    wheelang = yb.get_wheel_ang;
-    
-    %% Would do odometry here
-%     disp(' Wheel Angles ')
-%     disp('-- line 1 prev, line 2 current --')
-%     disp(prev_wheelang)
-%     disp(wheelang)
-%     disp('-- end --')
-
-    delta_wheelang = wheelang - prev_wheelang;
-    
-    disp('--Wheel Angle Delta (radians)--')
-    disp(delta_wheelang)
-    disp('-- Prev timestep --')
-    disp(prev_timestep)
-    
-    %%
-    
-    prev_wheelang = wheelang;
     
     youbotPos = yb.ref.position;
     youbotOrient = yb.ref.orientation;

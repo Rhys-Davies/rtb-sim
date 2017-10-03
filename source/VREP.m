@@ -43,12 +43,12 @@
 %         res = getSensorFrame(sensor)
 %         
 %      % Generic simulation management
-%         status = pauseSim(delay)
-%         status = startSim(delay)
-%         status = stopSim(delay)
-%         status = loadSimWorld(pathTOworld)
-%         status = loadSimObject(pathTOobject)
-%         status = deleteSimObject(obj)
+%         pauseSim()
+%         startSim()
+%         stopSim()
+%         loadSimWorld(pathTOworld)
+%         loadObject(pathTOobject)
+%         deleteObject(obj)
 %         time = pingSim(id)
 %         
 %      % Signal setters
@@ -338,7 +338,7 @@ classdef VREP < simulator
                 disp(' ');
             end
             disp([inputname(1), ' = '])
-            disp( char(v) );
+            disp( char(obj) );
         end 
         
         function s = char(obj)
@@ -516,7 +516,7 @@ classdef VREP < simulator
             
         end
         
-        function id = loadSimObject(obj,model,varargin)
+        function id = loadObject(obj,model,varargin)
         %% VREP.loadSimObject
         % Loads an object/model into the currently open scene. Specify
         % opt = 1 if file is client side, leave blank or specify opt =
@@ -525,32 +525,37 @@ classdef VREP < simulator
             p = inputParser;
             defaultFN = obj.path;
             defaultLoc = false;
+            defaultClient = true;
             
             addOptional(p,'fn',defaultFN,@isstring);
             addOptional(p,'local',defaultLoc,@islogical);
+            addOptional(p,'client',defaultClient,@islogical);
             
             parse(p,varargin{:});
             
             a = p.Results.fn;
             b = p.Results.local;
+            c = p.Results.client;
             
-            if ~strcmp(a,'None') && ~b
-                
-                error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
-                
-            else    
-                
-               if ~b
-                   
-                   if model(1) ~= '/'
-                       
-                       model = fullfile(obj.path, 'models', [model '.ttm']);
-                       
-                   end
-                   
-               end
-                   
-            end
+            
+            
+            
+%             if ~strcmp(a,'None') && ~b
+%                 
+%                 error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
+%                 
+%             else    
+%                 
+%                if ~b
+%                    
+%                    if model(1) ~= '/'
+%                        
+%                        model = fullfile(obj.path, 'models', [model '.ttm']);                    
+%                        
+%                    end
+%                end
+%                    
+%            end
             
             [r,id] = obj.sim.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
             
@@ -562,7 +567,7 @@ classdef VREP < simulator
             
         end
         
-        function deleteSimObject(obj,handle)
+        function deleteObject(obj,handle)
         %% VREP.deleteSimObject
         % Deletes an object with a given handle from currently active V-REP
         % scene.
