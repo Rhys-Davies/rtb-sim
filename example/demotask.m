@@ -8,13 +8,22 @@ yb = s.youbot('youBot');
 %ekf = demoEKF(init_pos);
 
 
-% ratio=resolutionX/resolutionY;
-% if (ratio>1)
-%     fov=2*atan(tan(perspectiveAngle/2)/ratio);
-% else
-%     fov=perspectiveAngle;
+% resolution = yb.rgbdcamera.rgbsensor.resolution %This is a bit rediculous. Minor re-arrange may be beneficial.
+% per_ang = yb.rgbdcamera.rgbsensor.fov
+% 
+% 
+%  ratio=resolution(1)/resolution(2);
+%  if (ratio>1)
+%      fov=2*atan(tan(per_ang/2)/ratio);
+%  else
+%      fov=per_ang;
+%  end
+%  
+%  fov = rad2deg(fov)
+
 %
 %
+
 %
 
 
@@ -22,14 +31,8 @@ yb = s.youbot('youBot');
 run = true;
 
 while run
-%     %pick a point
-% %     while travelling
-% %         observe and slam
-% %         step
-% %         if @ point or map changes break
-% %     end
-% 
-%     %proportional controller
+
+%     motion controller
 %     tic
 %     
 %     while toc < 0.5
@@ -40,8 +43,7 @@ while run
     im = yb.rgbdcamera.image();
     lnd = findLandmarks(im);
     %pos = ekf.update
-    % observe
-    % 
+
 
     pause (3);
 end
@@ -64,9 +66,9 @@ id = 2;
 
 [thresh_red, thresh_green, thresh_blue] = thresholdImage(image,ie,id);
 
-foundRed = iblobs(thresh_red,'area',[50,5000],'boundary', 'class',1);
-foundGreen = iblobs(thresh_green, 'area', [50,5000], 'boundary', 'class',1);
-foundBlue = iblobs(thresh_blue, 'area', [50,5000], 'boundary', 'class',1);
+foundRed = iblobs(thresh_red,'area',[50,50000],'boundary', 'class',1);
+foundGreen = iblobs(thresh_green, 'area', [50,50000], 'boundary', 'class',1);
+foundBlue = iblobs(thresh_blue, 'area', [50,50000], 'boundary', 'class',1);
 
 % figure(1)
 % idisp(image);
@@ -93,7 +95,7 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
     colour_list = [ones(size(foundRed,2),1);ones(size(foundGreen,2),1)*2;ones(size(foundBlue,2),1)*3];
     
     t = transpose(contour_list.uc);
-    [t2,index] = sortrows(t,1,'ascend'); 
+    [~,index] = sortrows(t,1,'ascend'); 
     contourXsort = contour_list(:,index);
     colourXsort = colour_list(index,:);
     
@@ -119,19 +121,28 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
         
         if sum(filt) == 3
            i = find(filt,1,'last') + 1;
-           disp('Found Landmark')
            tally = tally + 1;
            id = colourXsort(filt==1);
            cont = contourXsort(:,filt==1);
-           [lisy,ind] = sortrows(transpose(cont.vc),1,'descend');
+           [~,ind] = sortrows(transpose(cont.vc),1,'descend');
            cont = cont(:,ind);
            id = id(ind);
            lndid = bi2de([de2bi(id(1),2),de2bi(id(2),2),de2bi(id(3),2)]);
            lnd(tally,1) = lndid;
+           lnd(tally,2) = (.10*640)/height;
+           
+           mid = cont(2).uc;
+           
+           fov = 45;
 
-%            lnd(i,1) = lndid
-%            lnd(i,2) = range
-%            lnd(i,3) = bearing
+           if mid == 512
+               an = 0;
+           else
+              an = ((fov/2)/(512/2))*(mid-(512/2));
+           end
+                
+           lnd(tally,3) = an;
+           
         else
             i = i + 1;
         end
@@ -146,10 +157,8 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
     
     
     
-    
+    landmarks = lnd;
 
-    % dec2bin(
-    % bin2dec(vec,n)
 end
 
 

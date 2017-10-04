@@ -1294,13 +1294,14 @@ classdef VREP < simulator
         
         
 
-        function img = readVisionSensor(obj,target,varargin)
+        function img = readVisionSensor(obj,target,grey)
 
-            grey = false; % TODO: Optional Argument
-            opmode = obj.getter_mode;
+            if nargin < 3
+                grey = false; % TODO: Optional Argument
+            end
             
-            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,opmode);
-            
+            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.getter_mode);
+
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
@@ -1308,11 +1309,9 @@ classdef VREP < simulator
         end
         
 
-        function pts = readPointVisionSensor(obj,target,varargin)
-                 
-            opmode = obj.getter_mode;
+        function pts = readPointVisionSensor(obj,target)
             
-            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, opmode);
+            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1337,13 +1336,12 @@ classdef VREP < simulator
         end
         
 
-        function [res,img] = readVisionSensorDepth(obj,target,varargin)
+        function [res,img] = readVisionSensorDepth(obj,target)
+
             
-            opmode = obj.getter_mode;
+            [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,obj.getter_mode);
             
-            [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,opmode);
-            
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
@@ -1353,11 +1351,11 @@ classdef VREP < simulator
 
 %% Other sensors
 
-        function [state,torque,force] = readForceSensor(obj,ident,varargin)
+
+
+        function [state,torque,force] = readForceSensor(obj,ident)
             
-            opmode = obj.getter_mode;
-        
-            [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,opmode);
+           [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1366,11 +1364,10 @@ classdef VREP < simulator
         end
         
 
-        function [state,point] = readProximitySensor(obj,ident,varargin)
-            
-            opmode = obj.getter_mode;
-            
-            [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,opmode); % [r,state,point,found_obj,found_surface] 
+        function [state,point] = readProximitySensor(obj,ident)
+          
+     
+           [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,obj.getter_mode); % [r,state,point,found_obj,found_surface] 
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1420,7 +1417,7 @@ classdef VREP < simulator
         
         function out = forceSensor(obj,ident,breakable)
             
-            error('Not Implemented')
+           out = sim_force_sensor(obj,ident);
             
         end
         

@@ -17,16 +17,16 @@
 %   set_fov             % Sets the sensor's scan angle.
 %
 
-classdef sim_rgb_sensor < sim_entity
+classdef sim_rgb_sensor < sim_sensor
     
     properties
     end
     
     methods
         
-        function obj = sim_rgb_sensor(sim,ident,varargin)
+        function obj = sim_rgb_sensor(sim,ident)
         
-            obj = obj@sim_entity(sim,ident,varargin);
+            obj = obj@sim_sensor(sim,ident);
             
         end
         

@@ -41,11 +41,10 @@ classdef sim_sensor < sim_entity
         %% sim_sensor.resolution
         % Gets the resolution of the sensor.
         
-           res(1) = obj.getIntegerParam('sim_visionintparam_resolution_x',new(1));
-           res(2) = obj.getIntegerParam('sim_visionintparam_resolution_y',new(2));
+           res(1) = obj.get_IntParam(1002);
+           res(2) = obj.get_IntParam(1003);
             
-%          res(1) = obj.setObjIntParam(obj.id,'sim_visionintparam_resolution_x',new(1));
-%          res(2) = obj.setObjIntParam(obj.id,'sim_visionintparam_resolution_y',new(2));
+
 
         end
         
@@ -54,7 +53,7 @@ classdef sim_sensor < sim_entity
         % Gets the FOV of the sensor.
             
             % f = obj.getObjFloatParam('sim_visionfloatparam_perspective_angle',obj.id);
-            f = obj.getFloatParam('sim_visionfloatparam_perspective_angle'); % This will need to be something like obj.sim.getCamFOV or similar
+            f = obj.get_FloatParam(1004); % This will need to be something like obj.sim.getCamFOV or similar
         
         end
         
@@ -66,8 +65,8 @@ classdef sim_sensor < sim_entity
         %   new         % A 2-vector that contains [width, height]
         %
         
-            obj.setIntegerParam('sim_visionintparam_resolution_x',new(1));
-            obj.setIntegerParam('sim_visionintparam_resolution_y',new(2));
+            obj.set_IntParam(1002,new(1));
+            obj.set_IntParam(1003,new(2));
             
 %             obj.setObjIntParam(obj.id,'sim_visionintparam_resolution_x',new(1));
 %             obj.setObjIntParam(obj.id,'sim_visionintparam_resolution_y',new(2));
@@ -83,8 +82,8 @@ classdef sim_sensor < sim_entity
         %   new         % An angle in radians.
         %
         
-            % obj.setObjFloatParam('sim_visionfloatparam_perspective_angle',obj.id);
-            obj.setFloatParam('sim_visionfloatparam_perspective_angle',new);
+
+            obj.set_FloatParam(1004,new);
             
         end
         

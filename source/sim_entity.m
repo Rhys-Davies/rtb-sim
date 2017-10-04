@@ -182,7 +182,7 @@ classdef sim_entity < handle
         
         function param = get_FloatParam(obj,param)
             
-            param = obj.sim.getObjFloatParam(obj.id,param,new);
+            param = obj.sim.getObjFloatParam(obj.id,param);
             
         end
 
