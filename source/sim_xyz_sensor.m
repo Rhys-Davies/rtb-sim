@@ -26,9 +26,9 @@ classdef sim_xyz_sensor < sim_entity
     
     methods
         
-        function obj = sim_xyz_sensor(sim,ident,varargin)
+        function obj = sim_xyz_sensor(sim,ident)
          
-            obj = obj@sim_entity(sim,ident,varargin);
+            obj = obj@sim_entity(sim,ident);
             
         end
         

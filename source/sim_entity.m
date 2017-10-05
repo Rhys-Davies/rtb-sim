@@ -40,7 +40,7 @@ classdef sim_entity < handle
     
     methods
         
-        function obj = sim_entity(sim,ident,varargin)
+        function obj = sim_entity(sim,ident)
             
             % Add option to stream position and orientation
              
