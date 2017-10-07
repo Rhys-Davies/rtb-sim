@@ -84,100 +84,40 @@
 
 %%
 
-classdef sim_TRS_youBot < sim_entity
+classdef sim_youBot_TRS < sim_youBot
     
     properties
-        arm
-        gripper
-        gripper_target
-        ref
-        arm_ref
+      
         hokuyo
         rgbdcamera
-        wheels
-        mo_ctrl
+
     end
     
     methods
         
-        function obj = sim_TRS_youBot(sim,ident)
+        function obj = sim_youBot_TRS(sim,ident)
             
-            obj = obj@sim_entity(sim,ident);
+            obj = obj@sim_youBot(sim,ident);
             
-            obj.arm = obj.sim.arm('youBot','%sArmJoint%d');
-            obj.arm.enable_control;
-            obj.gripper = obj.sim.entity('youBot_gripperPositionTip');
-            obj.gripper_target = obj.sim.entity('youBot_gripperPositionTarget');
-            obj.ref = obj.sim.entity('youBot_center');
-            obj.arm_ref = obj.sim.entity('youBot_ref');
+           
             obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
             obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
-            obj.mo_ctrl = yb_motion_controller(10,3,5,1,0.05); % pParam, maxV, pParamRot, maxVRot, accelF
-            obj.mo_ctrl.update(0,0,0);
+
             
-            wjoints(1) = obj.sim.joint('rollingJoint_fl');
-            wjoints(2) = obj.sim.joint('rollingJoint_rl');
-            wjoints(3) = obj.sim.joint('rollingJoint_rr');
-            wjoints(4) = obj.sim.joint('rollingJoint_fr');          
-            obj.wheels = wjoints;
-            
-                       
-            for i=1:4
-                obj.wheels(i).enable_motor;
-                obj.wheels(i).disable_control;
-            end
-            
-        end
-        
-        function drive(obj, forwBackVel, leftRightVel, rotVel)
-            
-            vel = obj.mo_ctrl.update(forwBackVel, leftRightVel, rotVel);
-            
-            obj.setwheelvel(vel)
             
         end
         
         
-        %% This section may be more appropriate in sim_arm.
-        function setwheelvel(obj,vel)
+        function res = hokuyo_scan()
+        end
         
-            obj.sim.pauseComms(true);
-            %disp('pause')
-            for l=1:4
-                obj.wheels(l).set_tgt_vel(vel(l));
-            end
-            %disp('unpause')
-            obj.sim.pauseComms(false);
+        function res = rgb_image()
         
         end
         
-        function setkinematicmode(obj,mode)
-   
-           obj.sim.setIntegerSignal('km_mode', mode);
-            
+        function res = xyz_image()
         end
         
-        function open_gripper(obj)
-            
-            obj.sim.setIntegerSignal('gripper_open',1)
-            
-        end
-        
-        function close_gripper(obj)
-            
-            obj.sim.setIntegerSignal('gripper_open',0)
-            
-        end
-        
-        function ang = get_wheel_ang(obj)
-        
-            for i=1:4
-               a(i) = obj.wheels(i).angl;
-            end
-            
-            ang = a;
-            
-        end
         
     end
     
