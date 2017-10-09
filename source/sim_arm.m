@@ -15,7 +15,6 @@
 %   
 %   numj                % Number of joints in the arm
 %   joints              % Array of sim_joint objects that comprise the arm
-%   sim                 % Sim object. Not needed if above TODO implemented
 %
 % Methods
 %
@@ -29,22 +28,23 @@
 %
 
 
-classdef sim_arm < handle % < sim_entity
+classdef sim_arm < sim_entity % < sim_entity
     
     properties
         
         numj %Number of joints in assembly.
         joints %Array of joint objects.
-        sim
 
     end
     
     methods
         
-        function obj = sim_arm(sim, list, num)
+        function obj = sim_arm(sim, base, list, num)
             
-            obj.sim = sim;
+            obj = obj@sim_entity(sim,base);
             obj.numj = num;
+            
+            joints = [];
             
             for i=1:obj.numj
                joints(i) = obj.sim.joint(list(i));
@@ -62,7 +62,7 @@ classdef sim_arm < handle % < sim_entity
             a = [];
                         
             for i=1:obj.numj
-               a(i) = obj.joints(i).jpos(state(i));
+               a(i) = obj.joints(i).angl(state(i));
             end
             
             s = a;

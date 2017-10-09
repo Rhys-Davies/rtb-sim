@@ -42,48 +42,6 @@
 %
 
 
-%% Notes: The Vehicle class as used by RTB EKF.
-% This class models the kinematics of a car-like vehicle (bicycle model) on
-% a plane that moves in SE(2).  For given steering and velocity inputs it
-% updates the true vehicle state and returns noise-corrupted odometry
-% readings.
-%
-% Methods::
-%   init         initialize vehicle state
-%   f            predict next state based on odometry
-%   step         move one time step and return noisy odometry
-%   control      generate the control inputs for the vehicle
-%   update       update the vehicle state
-%   run          run for multiple time steps
-%   Fx           Jacobian of f wrt x
-%   Fv           Jacobian of f wrt odometry noise
-%   gstep        like step() but displays vehicle
-%   plot         plot/animate vehicle on current figure
-%   plot_xy      plot the true path of the vehicle
-%   add_driver   attach a driver object to this vehicle
-%   display      display state/parameters in human readable form
-%   char         convert to string
-%
-% Class methods::
-%   plotv        plot/animate a pose on current figure
-%
-% Properties (read/write)::
-%   x               true vehicle state: x, y, theta (3x1)
-%   V               odometry covariance (2x2)
-%   odometry        distance moved in the last interval (2x1)
-%   rdim             dimension of the robot (for drawing)
-%   L               length of the vehicle (wheelbase)
-%   alphalim        steering wheel limit
-%   maxspeed        maximum vehicle speed
-%   T               sample interval
-%   verbose         verbosity
-%   x_hist          history of true vehicle state (Nx3)
-%   driver          reference to the driver object
-%   x0              initial state, restored on init()
-
-
-%%
-
 classdef sim_youBot_TRS < sim_youBot
     
     properties
@@ -101,7 +59,7 @@ classdef sim_youBot_TRS < sim_youBot
             
            
             obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
-            obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
+            obj.rgbdcamera = sim.rgbdCamera('rgbdSensor');
 
             
             

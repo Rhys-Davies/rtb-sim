@@ -8,8 +8,8 @@ yb = s.youbot('youBot');
 %ekf = demoEKF(init_pos);
 
 
-% resolution = yb.rgbdcamera.rgbsensor.resolution %This is a bit rediculous. Minor re-arrange may be beneficial.
-% per_ang = yb.rgbdcamera.rgbsensor.fov
+% resolution = yb.rgbdcamera.rgbResolution %This is a bit rediculous. Minor re-arrange may be beneficial.
+% per_ang = yb.rgbdcamera.rgbFOV
 % 
 % 
 %  ratio=resolution(1)/resolution(2);

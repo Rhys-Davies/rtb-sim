@@ -43,6 +43,55 @@ classdef sim_cameraRGBD < sim_entity
             
         end
         
+        function res = rgbFOV(obj)
+            
+            res = obj.rgbsensor.fov();
+            
+        end
+        
+        function res = xyzFOV(obj)
+            
+            res = obj.rgbsensor.fov();
+            
+        end
+        
+        function res = xyzResolution(obj)
+        
+            res = obj.xyzsensor.resolution();
+            
+        end
+        
+        function res = rgbResolution(obj)
+            
+            res = obj.rgbsensor.resolution();
+        
+        end
+          
+        function set_rgbFOV(obj,new)
+            
+            obj.rgbsensor.set_fov(new);
+            
+        end
+        
+        function set_xyzFOV(obj,new)
+            
+            obj.xyzsensor.set_fov(new);
+            
+        end
+        
+        function set_xyzResolution(obj,new)
+            
+            obj.xyzsensor.set_resolution(new);
+        
+        end
+        
+        function set_rgbResolution(obj,new)
+            
+            obj.rgbsensor.set_resolution(new);
+            
+        end
+        
+        
     end
     
 end
