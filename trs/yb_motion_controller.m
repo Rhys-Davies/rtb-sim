@@ -42,7 +42,7 @@ classdef yb_motion_controller < handle
         
         end
         
-        function vel = update(obj, forwBackVel, leftRightVel, rotVel)
+        function out = update(obj, forwBackVel, leftRightVel, rotVel)
         
             forwBackVel=forwBackVel*obj.pParam;
             leftRightVel=leftRightVel*obj.pParam;
@@ -77,14 +77,9 @@ classdef yb_motion_controller < handle
             rotVel=obj.previousRotVel+dr;
             obj.previousForwBackVel=forwBackVel;
             obj.previousLeftRightVel=leftRightVel;
-            obj.previousRotVel=rotVel; 
-
-            vel1 = -forwBackVel-leftRightVel+rotVel;
-            vel2 = -forwBackVel+leftRightVel+rotVel;
-            vel3 = -forwBackVel-leftRightVel-rotVel;
-            vel4 = -forwBackVel+leftRightVel-rotVel;
+            obj.previousRotVel=rotVel;
             
-            vel = [vel1,vel2,vel3,vel4];
+            out = [forwBackVel,leftRightVel,rotVel];
             
         end
           

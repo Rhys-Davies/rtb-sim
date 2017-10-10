@@ -54,14 +54,13 @@ classdef sim_youBot < sim_entity
             
             obj = obj@sim_entity(sim,ident);
             
-            obj.arm = obj.sim.arm('youBot','%sArmJoint%d');
+            obj.arm = obj.sim.arm('youBot_ref','youBot','%sArmJoint%d');
             obj.arm.enable_control;
             obj.gripper = obj.sim.entity('youBot_gripperPositionTip');
             obj.gripper_target = obj.sim.entity('youBot_gripperPositionTarget');
             obj.ref = obj.sim.entity('youBot_center');
             obj.arm_ref = obj.sim.entity('youBot_ref');
-            obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
-            obj.rgbdcamera = sim.rgbdCamera('rgbdSensor'); % no stream
+
             
             wjoints(1) = obj.sim.joint('rollingJoint_fl');
             wjoints(2) = obj.sim.joint('rollingJoint_rl');

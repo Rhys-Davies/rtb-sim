@@ -13,10 +13,9 @@ clc
 % (See http://www.gnu.org/copyleft/gpl.html)
 
 sim = VREP(); % Default is to attempt connection to localhost
-yb = sim.youbot('youBot'); % TRS youBot is a modified version of the stock VREP one.
+yb = sim.youBotTRS('youBot'); % TRS youBot is a modified version of the stock VREP one.
+mo_ctrl = yb_motion_controller(20,12,10,4,0.05);
 sim.startSim();
-
-timestep = 0.05;
 
 % Starting pose of the arm.
 startPose =  [0, 30.91 * pi / 180, 52.42 * pi / 180, 72.68 * pi / 180, 0]; 
@@ -54,9 +53,6 @@ gripperHome = yb.gripper.position(yb.arm_ref.id);
 
 % Initialise state machine
 fsm = 'rotate';
-prev_wheelang = yb.get_wheel_ang;
-
-prev_timestep = 0;
 
 %% Start the Demo
 while true
@@ -66,21 +62,24 @@ while true
     youbotPos = yb.position;
     youbotOrient = yb.ref.orientation;
     
-    [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles
+    rr = sim.getFloatSignal('rr_encoder');
+    rl = sim.getFloatSignal('rl_encoder');
+    fl = sim.getFloatSignal('fl_encoder');
+    fr = sim.getFloatSignal('fr_encoder');
     
+    front = [fl,fr]
+    rear = [rl,rr]
+    
+    [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles ... .scan('plot',figure1)
+    
+    %% Remove stuff like this: Plotting handled by hokuyo class
     if plotData
         % Read data from the Hokuyo
            
         s1 = yb.hokuyo.h1pos;
         s2 = yb.hokuyo.h2pos;
         
-        % Select the points in the mesh [X, Y] that are visible, as returned by the Hokuyo.
-        in = inpolygon(X, Y, [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)]);
-                    
-        % Plot those points. Green dots: the visible area for the Hokuyo. Red stars: the obstacles. Red lines: the
-        % visibility range from the Hokuyo sensor. 
-        % The youBot is indicated with two dots: the blue one corresponds to the rear, the red one to the Hokuyo
-        % sensor position. 
+      
         subplot(211)
 %         plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
 %              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
@@ -119,15 +118,12 @@ while true
         case 'drive'
             %% Then, make it move straight ahead until it reaches the table. 
             % The further the robot, the faster it drives. (Only check for the first dimension.)
-            point = 3.167;
-            forwBackVel = -(youbotPos(1) + point);
-            %forwBackVel = -(youbotPos(1) + 3.167);
-            yb.drive(forwBackVel, leftRightVel, rotVel);
+
+            forwBackVel = -(youbotPos(1) + 3.167);
             % If the robot is sufficiently close and its speed is sufficiently low, stop it and move its arm to 
             % a specific location before moving on to the next state.
-            if (youbotPos(1) + point < .001) && (abs(youbotPos(1) - prevLoc) < .001)
+            if (youbotPos(1) + 3.167 < .001) && (abs(youbotPos(1) - prevLoc) < .001)
                 forwBackVel = 0;
-                %yb.setwheelvel([0,0,0,0]);
                 % Change the orientation of the camera
                 yb.rgbdcamera.set_orientation([0 0 pi/4],yb.ref.id);
                 % Move the arm to the preset pose.
@@ -224,13 +220,15 @@ while true
         otherwise
             error('Unknown state %s.',fsm);
     end
-
-    % Update wheel velocities using the global values (whatever the state is). 
-    yb.drive(forwBackVel, leftRightVel, rotVel);
+    
+    
+    % Update wheel velocities using the global values (whatever the state is).
+    out = mo_ctrl.update(forwBackVel, leftRightVel, rotVel);
+    yb.move(out(1), out(2), out(3));
 
     % Make sure that we do not go faster that the simulator (each iteration must take 50 ms). 
-    elapsed = toc
-    timeleft = timestep - elapsed;
+    elapsed = toc;
+    timeleft = 0.05 - elapsed;
     if timeleft > 0
         pause(min(timeleft, .01));
     end
@@ -239,5 +237,5 @@ while true
     
 end
 
-
+sim.stopSim();
 sim.delete();

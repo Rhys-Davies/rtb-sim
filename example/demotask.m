@@ -5,10 +5,10 @@ init_pos = [.35,.35,pi/2];
 s = VREP();
 s.startSim();
 yb = s.youbot('youBot');
-%ekf = demoEKF(init_pos);
+ekf = demoEKF(init_pos);
 
 
-% resolution = yb.rgbdcamera.rgbResolution %This is a bit rediculous. Minor re-arrange may be beneficial.
+% resolution = yb.rgbdcamera.rgbResolution
 % per_ang = yb.rgbdcamera.rgbFOV
 % 
 % 
@@ -42,7 +42,8 @@ while run
     
     im = yb.rgbdcamera.image();
     lnd = findLandmarks(im);
-    %pos = ekf.update
+    odo = getOdo(yb);
+    pos = ekf.update(odo,lnd)
 
 
     pause (3);
@@ -52,7 +53,14 @@ end
 % Initial pose wrt robot ref frame is [.35,.35,pi/2]
 end
 
+function odo = getOdo(sim)
 
+    test = sim.getFloatSignal('rr_encoder')
+    test2 = sim.getFloatSignal('fr_encoder')
+    test3 = sim.getFloatSignal('rl_encoder')
+    test4 = sim.getFloatSignal('fl_encoder')
+
+end
 
 
 function [landmarks] = findLandmarks(image)

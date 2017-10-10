@@ -5,10 +5,6 @@
 %
 
 
-%% TODO!!
-% Force Sensor
-% Move any VREP specific signal calls or data processing into the methods in this file.  
-%
 
 %% Notes:
 %   Return codes can be returned as any combination of bits... error
@@ -540,22 +536,22 @@ classdef VREP < simulator
             
             
             
-%             if ~strcmp(a,'None') && ~b
-%                 
-%                 error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
-%                 
-%             else    
-%                 
-%                if ~b
-%                    
-%                    if model(1) ~= '/'
-%                        
-%                        model = fullfile(obj.path, 'models', [model '.ttm']);                    
-%                        
-%                    end
-%                end
-%                    
-%            end
+            if ~strcmp(a,'None') && ~b
+                
+               error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
+                
+            else    
+                
+               if ~b
+                   
+                   if model(1) ~= '/'
+                       
+                       model = fullfile(obj.path, 'models', [model '.ttm']);                    
+                       
+                   end
+               end
+                   
+           end
             
             [r,id] = obj.sim.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
             
@@ -1044,7 +1040,7 @@ classdef VREP < simulator
 
         function sig = getFloatSignal(obj,signalName)
             
-            [r,sig] = obj.sim.simxGetFloatingSignal(obj.clientID,signalName,obj.getter_mode);
+            [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,signalName,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1434,22 +1430,28 @@ classdef VREP < simulator
         end
         
         
-        function out = arm(obj,ident,fmt)
+        function out = arm(obj,base,ident,fmt)
 
-            if nargin < 3
+            if nargin < 4
                 [list,num] = obj.armhelper(ident);
             else
                 [list,num] = obj.armhelper(ident,fmt);
             end
             
-             out = sim_arm(obj, list, num);
+             out = sim_arm(obj, base, list, num);
             
             
         end
         
-        function out = youbot(obj,ident)
+        function out = youBot(obj,ident)
 
-            out = sim_TRS_youBot(obj,ident);
+            out = sim_youBot(obj,ident);
+            
+        end
+        
+        function out = youBotTRS(obj,ident)
+
+            out = sim_youBot_TRS(obj,ident);
             
         end
         
@@ -1543,52 +1545,6 @@ classdef VREP < simulator
         end
             
     end 
-    
-%     function e = errcheck(obj,r,b)
-%
-%           if nargin < 3
-%               b = false;
-%           end
-%
-%            a = de2bi(r,6)
-%             
-%                 switch (r)
-%                         case obj.sim.simx_error_noerror
-%                             return
-%                         case obj.sim.simx_return_novalue_flag % Bit 0
-%                             if b == true
-%                                 return
-%                             else
-%                                 msgid = 'VREP:NoReply';
-%                                 error = 'Input buffer does not contain a command reply.';
-%                         case obj.sim.simx_return_timeout_flag % Bit 1
-%                             msgid = 'VREP:Timeout';
-%                             error = 'Function timed out. Network connection is down or slow.';
-%                         case obj.sim.simx_return_illegal_opmode_flag % Bit 2
-%                             msgid = 'VREP:IllegalOperationMode';
-%                             error = 'Function does not support the use of the selected operation mode.';
-%                         case obj.sim.simx_return_remote_error_flag % Bit 3
-%                             msgid = 'VREP:ServerSideError';
-%                             error = 'Server-side function error. Check function handle is valid.';
-%                         case obj.sim.simx_return_split_progress_flag % Bit 4
-%                             msgid = 'VREP:Busy';
-%                             error = 'Previous split command is still being processed. Try an opmode that does not split commands if this is an issue.';
-%                         case obj.sim.simx_return_local_error_flag % Bit 5
-%                             msgid = 'VREP:ClientSideError';
-%                             error = 'Client-side function error.';
-%                         case obj.sim.simx_return_initialize_error_flag % Bit 6
-%                             msgid = 'VREP:NotStarted';
-%                             error = 'Please call simxStart first. This error may also occur when you have a Remote API instance already active .';
-%                     otherwise
-%                         msgid = 'VREP:UnknownError';
-%                         error = sprintf('I''m sorry Dave, I''m afraid I can''t do that. (Unknown Error Code: %d)',r);  
-%                 end
-%                      
-%         end
-%             
-%     end 
-    
-    
  
 end
    

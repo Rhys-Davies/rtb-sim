@@ -70,9 +70,9 @@ classdef (Abstract) simulator < handle
         out = rgbdCamera(sim,ident)
         out = forceSensor(sim,ident)
         out = hokuyo(sim,ident)
-        %out = robot(sim,ident)
         out = arm(sim,ident)
-        out = youbot(sim,ident)
+        out = youBot(sim,ident)
+        out = youBotTRS(sim,ident)
         
     end
     

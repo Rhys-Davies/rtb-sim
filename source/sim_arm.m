@@ -40,11 +40,10 @@ classdef sim_arm < sim_entity % < sim_entity
     methods
         
         function obj = sim_arm(sim, base, list, num)
-            
+
             obj = obj@sim_entity(sim,base);
             obj.numj = num;
             
-            joints = [];
             
             for i=1:obj.numj
                joints(i) = obj.sim.joint(list(i));
