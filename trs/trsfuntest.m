@@ -62,14 +62,6 @@ while true
     youbotPos = yb.position;
     youbotOrient = yb.ref.orientation;
     
-    rr = sim.getFloatSignal('rr_encoder');
-    rl = sim.getFloatSignal('rl_encoder');
-    fl = sim.getFloatSignal('fl_encoder');
-    fr = sim.getFloatSignal('fr_encoder');
-    
-    front = [fl,fr]
-    rear = [rl,rr]
-    
     [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles ... .scan('plot',figure1)
     
     %% Remove stuff like this: Plotting handled by hokuyo class

@@ -129,9 +129,6 @@ classdef Gazebo < handle %Gazebo < simulator
         function closeScene(obj)
         end
         
-        function time = pingSim(obj,n)
-            
-        end
         
         %% Generic object management
         

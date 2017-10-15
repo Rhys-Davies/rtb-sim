@@ -1,15 +1,46 @@
-function [] = demotask()
+function [] = demotask_diffbot()
 
-init_pos = [.35,.35,pi/2];
+clc
+
+% All API functions use SI units.
+fig = figure(1);
+cla
+init_pos = [.5,.5,pi/2];
 
 s = VREP();
+
+%% Using this stuff to complete a task is cheating! For testing only!
+l45 = s.entity('45');
+l57 = s.entity('57');
+l38 = s.entity('38');
+l29 = s.entity('29');
+l27 = s.entity('27');
+mref = s.entity('MapRef');
+
+pos45 = l45.position(mref); 
+pos57 = l57.position(mref);
+pos38 = l38.position(mref);
+pos29 = l29.position(mref);
+pos27 = l27.position(mref);
+
+Y = [pos45(2),pos57(2),pos38(2),pos29(2),pos27(2)];
+X = [pos45(1),pos57(1),pos38(1),pos29(1),pos27(1)];
+
+figure(fig)
+scatter(X,Y,'*r');
+
+
+
+
+%% Continue as normal
+
 s.startSim();
-yb = s.youbot('youBot');
-ekf = demoEKF(init_pos);
+db = s.diffBot('diffBot');
+ekf = demoEKF(init_pos,0.01,0.01,0.01,0.01,fig);
 
 
 % resolution = yb.rgbdcamera.rgbResolution
-% per_ang = yb.rgbdcamera.rgbFOV
+% per_ang = yb.rgbdcamera.rgbFOVs
 % 
 % 
 %  ratio=resolution(1)/resolution(2);
@@ -21,47 +52,178 @@ ekf = demoEKF(init_pos);
 %  
 %  fov = rad2deg(fov)
 
-%
-%
-
-%
-
 
 
 run = true;
+state = 'initekf';
+Z = getZ([4,4],init_pos);
+scan = 0;
+drive = 0;
 
 while run
-
-%     motion controller
-%     tic
-%     
-%     while toc < 0.5
-%     end
-%     
-%     % stop
     
-    im = yb.rgbdcamera.image();
-    lnd = findLandmarks(im);
-    odo = getOdo(yb);
-    pos = ekf.update(odo,lnd)
+    odo = [0,0];  
 
 
+    switch state
+       
+        case 'initekf'
+            
+            odo = [0,0];
+            state = 'turn2center';
+
+        case 'turn2center'
+
+                odo = turn(db,Z(2));
+                state = 'translate2center';
+
+        case 'translate2center'
+                
+                if drive > Z(1)
+                   state = 'scan';
+                else    
+                   odo = translate(db,.3);
+                   drive = drive + odo(1);
+                end
+                
+        case 'scan' 
+            
+            if scan < 270
+                odo = turn(db,-deg2rad(30))
+                scan = scan + 30;
+            else
+                state = 'done';
+                odo = [0,0];
+            end
+            
+        case 'done'
+            
+            disp('Run complete');
+            break;
+            
+    end
+%     
+    im = db.rgbdcamera.image();
+    lnd = findLandmarks(im)
+    state_vec = ekf.update(odo,lnd)
+    lnd = ekf.lndmrk_id
+  
+    halfFOV = deg2rad(90);
+    coneLength = 0.2;
+    
+    x_true = db.pose(mref);
+    x_true(3)
+   
+    LX = x_true(1) + (coneLength)*cos(x_true(3));
+    LY = x_true(2) + (coneLength)*sin(x_true(3));
+
+    RX = x_true(1) + (coneLength)*cos(x_true(3)+halfFOV);
+    RY = x_true(2) + (coneLength)*sin(x_true(3)+halfFOV);
+    
+    line3 = line([x_true(1),LX],[x_true(2),LY],'Color','Green');
+    line4 = line([x_true(1),RX],[x_true(2),RY],'Color','Black');
+    
     pause (3);
+    
 end
 
 
-% Initial pose wrt robot ref frame is [.35,.35,pi/2]
 end
 
-function odo = getOdo(sim)
+function odo = getenc(db)
 
-    test = sim.getFloatSignal('rr_encoder')
-    test2 = sim.getFloatSignal('fr_encoder')
-    test3 = sim.getFloatSignal('rl_encoder')
-    test4 = sim.getFloatSignal('fl_encoder')
+    enc = db.getEncoder; % Returns rotation of wheels since last encoder check.
+    enc(1) = rad2deg(enc(1));
+    enc(2) = rad2deg(enc(2));
+    enc = enc*.000873; % Convert from degrees rotated to distance travelled.
+    odo = enc;
+    
+end
+
+function odo = turn(db,ang)
+
+    if ang < 0
+        new = [-deg2rad(50),deg2rad(50)];
+    elseif ang > 0
+        new = [deg2rad(50),-deg2rad(50)];
+    end
+    
+    run = true;
+    start = getenc(db);
+    ang_true = 0;
+    db.setMotorVel(new);
+
+    
+    while run
+        
+        check = getenc(db);
+        current = check - start;
+        c_ang = ((current(1) - current(2))/(.4));
+        
+        if abs(c_ang) >= abs(ang)
+            run = false;
+            ang_true = c_ang;
+            break;
+        end
+        
+    end
+    
+    db.setMotorVel([0,0]);
+    pause(0.2)
+
+    odo = [0,ang_true];
 
 end
 
+
+function godseye(s,fig,db)
+
+
+
+end
+
+
+function odo = translate(db,dist)
+
+if dist < 0
+    new = [-deg2rad(100),-deg2rad(100)];    
+elseif dist > 0
+    new = [deg2rad(100),deg2rad(100)];
+end
+
+
+run = true;
+start = getenc(db);
+dist_true = 0;
+db.setMotorVel(new);
+
+    
+    while run
+        check = getenc(db);
+        current = check - start;
+        c_dist = (current(1)+current(2))/2;
+        if abs(c_dist) >= abs(dist)
+            run = false;
+            dist_true = c_dist;
+            break;
+        
+        end
+    end  
+    
+    db.setMotorVel([0,0]);
+    odo = [dist_true,0];
+        
+end
+
+
+function z = getZ(goal,current)
+
+r = sqrt((current(1) - goal(1))^2 + (current(2) - goal(2))^2);
+b = wrapToPi(wrapToPi(atan2(goal(2) - current(2), goal(1) - current(1))) - current(3)); % Wrap to pi
+
+z = [r,b];
+
+end
 
 function [landmarks] = findLandmarks(image)
 % landmarks = [range,bearing,id]
@@ -136,8 +298,8 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            cont = cont(:,ind);
            id = id(ind);
            lndid = bi2de([de2bi(id(1),2),de2bi(id(2),2),de2bi(id(3),2)]);
-           lnd(tally,1) = lndid;
-           lnd(tally,2) = (.10*640)/height;
+
+           lnd(tally,1) = (.10*640)/height;
            
            mid = cont(2).uc;
            
@@ -146,10 +308,11 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            if mid == 512
                an = 0;
            else
-              an = ((fov/2)/(512/2))*(mid-(512/2));
+              an = (((fov/2)/(512/2))*(mid-(512/2)))*-1;
            end
                 
-           lnd(tally,3) = an;
+           lnd(tally,2) = deg2rad(an);
+           lnd(tally,3) = lndid;
            
         else
             i = i + 1;
@@ -162,11 +325,12 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
     
     end
     
-    
-    
-    
     landmarks = lnd;
 
+else
+    
+    landmarks = [];
+    
 end
 
 
@@ -180,9 +344,6 @@ function [thresh_red, thresh_green, thresh_blue] = thresholdImage(image, ie, id)
 %% Threshhold
 
 impro = rgb2hsv(image); % Convert from RGB to HSV Colorspace
-
-figure(5)
-imshow(impro)
 
 %% Set Blue Threshhold
 thresh_blue_H = impro(:,:,1) > 0.6 & impro(:,:,1) < 0.7; %Threshold the HUE component of the image

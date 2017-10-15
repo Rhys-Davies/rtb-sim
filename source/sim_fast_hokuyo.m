@@ -1,6 +1,6 @@
+%% Class to represent a VREP Fast Hokuyo sensor
+
 classdef sim_fast_hokuyo < sim_entity
-    %SIM_HYOKU Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         
@@ -22,7 +22,6 @@ classdef sim_fast_hokuyo < sim_entity
         function obj = sim_fast_hokuyo(sim,ident,ref)
             
             obj = obj@sim_entity(sim,ident);
-            %obj.sim.setIntegerSignal('handle_xy_sensor',2)
             obj.sensor1 = obj.sim.xy_sensor('fastHokuyo_sensor1');
             obj.sensor2 = obj.sim.xy_sensor('fastHokuyo_sensor2');  
             
@@ -76,6 +75,30 @@ classdef sim_fast_hokuyo < sim_entity
             t2 = transl(obj.h2pos) * trotx(obj.h2eul(1)) * troty(obj.h2eul(2)) * trotz(obj.h2eul(3));
             
         end
+        
+        
+%         plotData
+%         % Read data from the Hokuyo
+%            
+%         s1 = yb.hokuyo.h1pos;
+%         s2 = yb.hokuyo.h2pos;
+%         
+%       
+%         subplot(211)
+% %         plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
+% %              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
+% %              0, 0, 'ob', s1(1), s1(2), 'or', s2(1), s2(2), 'or');
+%          
+%          plot(pts(1, contacts), pts(2, contacts), '*r',...
+%              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'b',...
+%              0, 0, 'og', s1(1), s1(2), 'ob', s2(1), s2(2), 'ob');
+%          
+%          
+%         axis([-5.5, 5.5, -5.5, 2.5]);
+%         axis equal;
+%         drawnow;
+%         
+        
     
     end
     

@@ -7,46 +7,49 @@ classdef demoEKF < handle
         lndmrk_id
         R
         Q
+        figure1
         
     end
     
     methods
         
-        function obj = demoEKF(init_pose,omega_l,omega_r,omega_d,omega_b)
+        function obj = demoEKF(init_pose,omega_l,omega_r,omega_d,omega_b,figure1)
             
-            obj.mu_t = init_pose;
+            obj.figure1 = figure1;
+            obj.mu_t = [init_pose(1);init_pose(2);init_pose(3)];
             obj.sigma_t = zeros(3,3);
             obj.R = [omega_l^2 0; 0 omega_r^2]; % Change this
             obj.Q = [omega_d^2 0; 0 omega_b^2]; % Change this            
         
         end
     
-        function update(obj,odo,sense)
+        function state = update(obj,odo,sense)
         %% sense is [range,bearing,id]
         % odo = [delta distance, delta bearing]
+            odo
             delta_d = odo(1);
             delta_theta = odo(2);       
             z = sense;
 
 
             %% Do prediction.
-
-            mu_bar(1:3,1) = update_state(obj.mu_t(1:3), delta_d, delta_theta);
+            mu_bar = obj.mu_t;
+            mu_bar(1:3,1) = obj.update_state(obj.mu_t(1:3), delta_d, delta_theta);
 
             l = (size(mu_bar,1) - 3)/2;
 
-            Jxr = get_jx(delta_d,mu_bar(3));
+            Jxr = obj.get_jx(delta_d,mu_bar(3));
             Jx = [Jxr zeros(3,2*l); zeros(2*l,3) eye(2*l,2*l)]; % Jacobian matrix of F wrt the
             JxT = transpose(Jx);
 
-            Jur = get_ju(obj.mu_t(1:3));
+            Jur = obj.get_ju(obj.mu_t(1:3));
             Ju = [Jur; zeros(2*l,2)];
             JuT = transpose(Ju);
 
             sigma_bar = (Jx * obj.sigma_t * JxT) + (Ju * obj.R * JuT);
     
  
-            for z = 1:size(z,1)
+            for y = 1:size(z,1)
 
 
 
@@ -60,18 +63,18 @@ classdef demoEKF < handle
                 % k == n if landmark seen before (n = index in landmarklist
                 % which is directly related to its location in mu_t)
                 
-                check = find(obj.lndmrk_id == z(n,3),1); 
+                check = find(obj.lndmrk_id == z(y,3),1); 
                 
                 if isempty(check)
 
-                    new = init_lnd(z(n,:),mu_bar(1:3,1));
+                    new = obj.init_lnd(z(y,:),mu_bar(1:3));
                     
-                    ab = size(obj.lndmrk_id,2) + 1;
+                    ab = size(obj.lndmrk_id,1) + 1;
                     
-                    obj.lndmrk_id(ab) = z(n,3);
+                    obj.lndmrk_id = [obj.lndmrk_id,z(y,3)];
                     mu_bar = [mu_bar;new];
 
-                    [Lz, LzT] = get_L(mu_bar(1:3,1),z(n,:));
+                    [Lz, LzT] = obj.get_L(mu_bar(1:3,1),z(y,:));
 
                     z1 = zeros(size(sigma_bar,1),2);
                     z2 = zeros(2,size(sigma_bar,2));
@@ -80,7 +83,7 @@ classdef demoEKF < handle
                     n = ab;
 
                 else
-
+                
                     n = check(1);
 
                 end
@@ -90,15 +93,15 @@ classdef demoEKF < handle
             
                  a = 4 + (2*(n - 1));   
 
-                 zti = get_z(mu_bar(1:3,1),mu_bar(a:a+1,1)); 
-
-                 s = [z(n,1); z(n,2)] - zti;
+                 zti = obj.get_z(mu_bar(1:3,1),mu_bar(a:a+1,1)); 
+                 
+                 s = [z(y,1); z(y,2)] - zti;
 
                  s(2) = wrapToPi(s(2)); %Need to make sure all angle stay between pi and -pi
 
                  l = (size(mu_bar,1)-3)/2;
 
-                 [gt, gtT] = get_g(mu_bar(1:3,1),mu_bar(a:a+1,1),zti(1),n,l);
+                 [gt, gtT] = obj.get_g(mu_bar(1:3,1),mu_bar(a:a+1,1),zti(1),n,l);
 
                  kt = sigma_bar*gtT*((gt*sigma_bar*gtT) + obj.Q)^(-1); 
 
@@ -113,9 +116,49 @@ classdef demoEKF < handle
 
             obj.mu_t = mu_bar;
             obj.sigma_t = sigma_bar;
-             
             
+            
+            
+            %% Plot everything
+
+            halfFOV = deg2rad(90);
+            coneLength = 0.2;
+
+            viewPortLX = obj.mu_t(1) + (coneLength)*cos(obj.mu_t(3));
+            viewPortLY = obj.mu_t(2) + (coneLength)*sin(obj.mu_t(3));
+
+            viewPortRX = obj.mu_t(1) + (coneLength)*cos(obj.mu_t(3)+halfFOV);
+            viewPortRY = obj.mu_t(2) + (coneLength)*sin(obj.mu_t(3)+halfFOV);
+            
+            figure(obj.figure1);
+            
+            hold on
+            
+            axis([-1,9,-1,9]);
+            
+            line1 = line([obj.mu_t(1),viewPortLX],[obj.mu_t(2),viewPortLY],'Color','Red');
+            line2 = line([obj.mu_t(1),viewPortRX],[obj.mu_t(2),viewPortRY],'Color','Blue');
+
+            % Plot robot cov
+            plot_cov(obj.mu_t(1:3),obj.sigma_t(1:3,1:3),3)
+
+            % Plot lndmrk cov
+            col = ['y','m','c','g','k'];
+            
+            for i = 1:size(obj.lndmrk_id,2)
+                ln = 4+(2*(i-1));
+                plot_cov(obj.mu_t(ln:ln+1),obj.sigma_t(ln:ln+1,ln:ln+1),3); %ln:ln+1
+                scatter(obj.mu_t(ln),obj.mu_t(ln+1),col(i))
+            end
+            
+            hold off
+            
+            state = obj.mu_t;
+             
         end
+    end
+    
+    methods (Static)        
         
         function [Gt,GtT] = get_g(bot,lnd,r,n,totl)
             
@@ -142,7 +185,8 @@ classdef demoEKF < handle
             
         end   
 
-        %% Modify this for omni wheels    
+        %% Update state
+        
         function [new_state] = update_state(state, delta_d, delta_th)
             
             xt = state(1) + delta_d * cos(state(3));
@@ -191,6 +235,7 @@ classdef demoEKF < handle
         end        
         
         
+       
     end
     
 end

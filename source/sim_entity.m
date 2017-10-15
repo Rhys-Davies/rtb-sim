@@ -71,7 +71,7 @@ classdef sim_entity < handle
         
             if nargin < 2 
                 rel2 = -1;
-            elseif nargin == 2 && rel2 ~= -1 && isa(rel2,'sim_entity')
+            elseif nargin == 2 && isa(rel2,'sim_entity')
                 rel2 = rel2.id;
             end
             
@@ -79,7 +79,7 @@ classdef sim_entity < handle
             eul = obj.sim.getOrientation(obj.id,rel2);
             
             out = transl(pos) * eul2tr(eul, 'deg');
-        
+            
         end
         
         function out = position(obj,rel2) % position(obj,varargin)

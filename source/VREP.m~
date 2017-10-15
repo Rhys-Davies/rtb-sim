@@ -1457,9 +1457,7 @@ classdef VREP < simulator
         
         function out = diffBot(obj,ident)
             
-            out = sim_diffBot(obj,ident);
-        
-        end
+            out = sim_diffBot(obj,ide
         
         %% Misc Helpers
 
