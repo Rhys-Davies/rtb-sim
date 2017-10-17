@@ -43,17 +43,17 @@ classdef sim_sensor < sim_entity
         
            res(1) = obj.get_IntParam(1002);
            res(2) = obj.get_IntParam(1003);
-            
-
 
         end
         
         function f = fov(obj)
         %% sim_sensor.fov
-        % Gets the FOV of the sensor.
+        % Gets the FOV of the sensor. Technically this is actually the
+        % perspective angle... this matters if the sensor resolution is not
+        % m-by-m. TODO: Fix this. Same for set_fov.
             
             % f = obj.getObjFloatParam('sim_visionfloatparam_perspective_angle',obj.id);
-            f = obj.get_FloatParam(1004); % This will need to be something like obj.sim.getCamFOV or similar
+            f = obj.get_FloatParam(1004);
         
         end
         

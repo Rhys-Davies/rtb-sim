@@ -3,10 +3,18 @@ function [] = demotask_diffbot()
 clc
 
 % All API functions use SI units.
-fig = figure(1);
-cla
-init_pos = [.5,.5,pi/2];
 
+fig = figure(1);
+
+cla
+
+%% Problem parameters
+
+init_pos = [.5,.5,pi/2];
+lndmrks_need = [29,38];
+rescue_point = 
+
+%% Initialize Simulation Class
 s = VREP();
 
 %% Using this stuff to complete a task is cheating! For testing only!
@@ -70,14 +78,14 @@ while run
         case 'initekf'
             
             odo = [0,0];
-            state = 'turn2center';
+            state = 'turn';
 
-        case 'turn2center'
+        case 'turn'
 
                 odo = turn(db,Z(2));
-                state = 'translate2center';
+                state = 'translate';
 
-        case 'translate2center'
+        case 'translate'
                 
                 if drive > Z(1)
                    state = 'scan';
@@ -95,6 +103,14 @@ while run
                 state = 'done';
                 odo = [0,0];
             end
+            
+        case 'find'
+            
+            % check landmarks against lndmrks_need
+            % get their pos
+            % get transform
+            % find point
+            % Z =
             
         case 'done'
             
@@ -139,6 +155,51 @@ function odo = getenc(db)
     odo = enc;
     
 end
+
+function trans = getTransform(m1,m2,m1t,m2t)
+
+    Ax1 = m1(1);
+    Ay1 = m1(2);
+    Ax2 = m2(1);
+    Ay2 = m2(2);
+
+    Bx1 = m1t(1);
+    By1 = m1t(2);
+    Bx2 = m2t(1);
+    By2 = m2t(2);
+
+    A = [ -By1, Bx1, 1, 0; ...
+           Bx1, By1, 0, 1; ...
+          -By2, Bx2, 1, 0; ...
+           Bx2, By2, 0, 1; ];
+    B = [Ax1, Ay1, Ax2, Ay2];
+
+    x = linsolve(A,B);
+
+    theta = atan2(x(1),x(2));
+
+    trans = [theta, x(3), x(4)];
+
+end
+
+function p = transPoint(trans,point)
+
+    theta = trans(1);
+    AxB = trans(2);
+    AyB = trans(3);
+
+    a = [ cos(theta), -sin(theta), AxB; ...
+          sin(theta),  cos(theta), AyB; ...
+          0         ,  0         , 1   ];
+
+    b = [point(1); ...
+         point(2); ...
+         1       ];
+
+    p = dot(a,b);
+  
+end
+
 
 function odo = turn(db,ang)
 

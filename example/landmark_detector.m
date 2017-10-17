@@ -1,5 +1,5 @@
-classdef gazebo_entity
-    %GAZEBO_ENTITY Summary of this class goes here
+classdef landmark_detector < handle
+    %LANDMARK_DETECTOR Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
@@ -7,8 +7,8 @@ classdef gazebo_entity
     end
     
     methods
-        function obj = gazebo_entity(inputArg1,inputArg2)
-            %GAZEBO_ENTITY Construct an instance of this class
+        function obj = landmark_detector(inputArg1,inputArg2)
+            %LANDMARK_DETECTOR Construct an instance of this class
             %   Detailed explanation goes here
             obj.Property1 = inputArg1 + inputArg2;
         end

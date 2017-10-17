@@ -51,6 +51,14 @@ classdef sim_joint < sim_entity
        
         end
         
+        function m = mode(obj)
+           %sim_jointintparam_motor_enabled (2000): int32 parameter : dynamic motor enable state (0 or !=0)
+           %sim_jointintparam_ctrl_enabled (2001): int32 parameter : dynamic motor control loop enable state (0 or !=0)
+           
+           %Returns the current mode of the joint.
+           
+        end
+        
         %% Setters
         
         function set_angl(obj,new)
