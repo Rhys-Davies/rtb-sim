@@ -62,10 +62,8 @@ while run
             state = 'turn';
 
         case 'turn'
-    
-                disp(rad2deg(Z(2)))
+
                 odo = turn(db,Z(2));
-                disp(rad2deg(odo(2)))
                 state = 'translate';
 
         case 'translate'
@@ -110,8 +108,9 @@ while run
 %     
     im = db.rgbdcamera.image();
     lnd = findLandmarks(im);
+    disp(size(lnd
     state_vec = ekf.update(odo,lnd);
-    lnd_found = ekf.lndmrk_id;
+    lnd = ekf.lndmrk_id;
   
     %% Plot Actual Landmark and Robot States.
     
@@ -121,7 +120,7 @@ while run
     pos_true = db.position(mref);
     ori_true = db.orientation(mref);
     x_true = pos_true;
-    x_true(3) = ori_true(3) + pi;
+    x_true(3) = ori_true(3) + pi ;
    
     LX = x_true(1) + (coneLength)*cos(x_true(3));
     LY = x_true(2) + (coneLength)*sin(x_true(3));
@@ -213,7 +212,6 @@ function odo = turn(db,ang)
         c_ang = ((current(1) - current(2))/(.4));
         
         if abs(c_ang) >= abs(ang)
-            db.setMotorVel([0,0]);
             run = false;
             ang_true = c_ang;
             break;
@@ -221,7 +219,9 @@ function odo = turn(db,ang)
         
     end
     
+    db.setMotorVel([0,0]);
     pause(0.2)
+
     odo = [0,ang_true];
 
 end
@@ -248,14 +248,14 @@ db.setMotorVel(new);
         current = check - start;
         c_dist = (current(1)+current(2))/2;
         if abs(c_dist) >= abs(dist)
-            db.setMotorVel([0,0]);
             run = false;
             dist_true = c_dist;
             break;
         
         end
     end  
-  
+    
+    db.setMotorVel([0,0]);
     odo = [dist_true,0];
         
 end
@@ -348,7 +348,7 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            
            if distance < 5.5
            
-               lnd(tally,1) = distance + .175;
+               lnd(tally,1) = distance;
 
                mid = cont(2).uc;
 

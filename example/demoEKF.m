@@ -26,7 +26,7 @@ classdef demoEKF < handle
         function state = update(obj,odo,sense)
         %% sense is [range,bearing,id]
         % odo = [delta distance, delta bearing]
-            odo
+
             delta_d = odo(1);
             delta_theta = odo(2);       
             z = sense;

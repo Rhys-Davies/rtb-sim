@@ -1,14 +1,9 @@
-%% VREP Class %%
-%
-% Inherits from the simulator superclass. Methods are overridden where 
-% appropriate to deal with VREPs interface.
-%
-
+%% VREP Simulator Class
 
 
 %% Notes:
 %   Return codes can be returned as any combination of bits... error
-%   catching method needs a rewrite.
+%   catching method may need a rewrite to handle combined errors.
 %%
 
 % properties
@@ -197,6 +192,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         sim
         PORT
         IP
+        clientID
         path
         libpath
         mode
@@ -390,7 +386,8 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
         
         function delete(obj)
-         % Destroy the simulator object and cleanup   
+        % VREP.delete
+        % Destroy the simulator object and cleanup   
 
             obj.sim.simxFinish(obj.clientID);
             obj.sim.simxFinish(-1);
