@@ -7,15 +7,13 @@ classdef demoEKF < handle
         lndmrk_id
         R
         Q
-        figure1
-        
+
     end
     
     methods
         
-        function obj = demoEKF(init_pose,omega_l,omega_r,omega_d,omega_b,figure1)
-            
-            obj.figure1 = figure1;
+        function obj = demoEKF(init_pose,omega_l,omega_r,omega_d,omega_b)
+
             obj.mu_t = [init_pose(1);init_pose(2);init_pose(3)];
             obj.sigma_t = zeros(3,3);
             obj.R = [omega_l^2 0; 0 omega_r^2]; % Change this
@@ -23,7 +21,7 @@ classdef demoEKF < handle
         
         end
     
-        function state = update(obj,odo,sense)
+        function [state,sig] = update(obj,odo,sense)
         %% sense is [range,bearing,id]
         % odo = [delta distance, delta bearing]
 
@@ -36,7 +34,7 @@ classdef demoEKF < handle
             mu_bar = obj.mu_t;
             mu_bar(1:3,1) = obj.update_state(obj.mu_t(1:3), delta_d, delta_theta);
 
-            l = (size(mu_bar,1) - 3)/2;
+            l = size(obj.lndmrk_id,2);
 
             Jxr = obj.get_jx(delta_d,mu_bar(3));
             Jx = [Jxr zeros(3,2*l); zeros(2*l,3) eye(2*l,2*l)]; % Jacobian matrix of F wrt the
@@ -69,8 +67,6 @@ classdef demoEKF < handle
 
                     new = obj.init_lnd(z(y,:),mu_bar(1:3));
                     
-                    ab = size(obj.lndmrk_id,1) + 1;
-                    
                     obj.lndmrk_id = [obj.lndmrk_id,z(y,3)];
                     mu_bar = [mu_bar;new];
 
@@ -80,7 +76,7 @@ classdef demoEKF < handle
                     z2 = zeros(2,size(sigma_bar,2));
                     sigma_bar = [sigma_bar, z1; z2, Lz*obj.Q*LzT];
                     
-                    n = ab;
+                    n = size(obj.lndmrk_id,2);
 
                 else
                 
@@ -90,26 +86,29 @@ classdef demoEKF < handle
 
 
             %% Do Estimation
-            
-                 a = 4 + (2*(n - 1));   
 
-                 zti = obj.get_z(mu_bar(1:3,1),mu_bar(a:a+1,1)); 
-                 
-                 s = [z(y,1); z(y,2)] - zti;
 
-                 s(2) = wrapToPi(s(2)); %Need to make sure all angle stay between pi and -pi
+                l = size(obj.lndmrk_id,2);
 
-                 l = (size(mu_bar,1)-3)/2;
+                a = 4 + (2*(n - 1));
 
-                 [gt, gtT] = obj.get_g(mu_bar(1:3,1),mu_bar(a:a+1,1),zti(1),n,l);
+                zti = obj.get_z(mu_bar(1:3,1),mu_bar(a:a+1,1)); 
 
-                 kt = sigma_bar*gtT*((gt*sigma_bar*gtT) + obj.Q)^(-1); 
+                s = [z(y,1); z(y,2)] - zti;
 
-                 mu_bar = mu_bar + kt*s; % Updated position         
+                s(2) = wrapToPi(s(2)); %Need to make sure all angle stay between pi and -pi
 
-                 mu_bar(3) = wrapToPi(mu_bar(3)); % Wrap angles... again.
 
-                 sigma_bar = (eye(size(sigma_bar)) - (kt * gt)) * sigma_bar; %Update covariance matrix.
+
+                [gt, gtT] = obj.get_g(mu_bar(1:3,1),mu_bar(a:a+1,1),zti(1),n,l);
+
+                kt = sigma_bar*gtT*((gt*sigma_bar*gtT) + obj.Q)^(-1); 
+
+                mu_bar = mu_bar + kt*s; % Updated position         
+
+                mu_bar(3) = wrapToPi(mu_bar(3)); % Wrap angles... again.
+
+                sigma_bar = (eye(size(sigma_bar)) - (kt * gt)) * sigma_bar; %Update covariance matrix.
 
 
             end
@@ -117,43 +116,8 @@ classdef demoEKF < handle
             obj.mu_t = mu_bar;
             obj.sigma_t = sigma_bar;
             
-            
-            
-            %% Plot everything
-
-            halfFOV = deg2rad(90);
-            coneLength = 0.2;
-
-            viewPortLX = obj.mu_t(1) + (coneLength)*cos(obj.mu_t(3));
-            viewPortLY = obj.mu_t(2) + (coneLength)*sin(obj.mu_t(3));
-
-            viewPortRX = obj.mu_t(1) + (coneLength)*cos(obj.mu_t(3)+halfFOV);
-            viewPortRY = obj.mu_t(2) + (coneLength)*sin(obj.mu_t(3)+halfFOV);
-            
-            figure(obj.figure1);
-            
-            hold on
-            
-            axis([-1,9,-1,9]);
-            
-            line1 = line([obj.mu_t(1),viewPortLX],[obj.mu_t(2),viewPortLY],'Color','Red');
-            line2 = line([obj.mu_t(1),viewPortRX],[obj.mu_t(2),viewPortRY],'Color','Blue');
-
-            % Plot robot cov
-            plot_cov(obj.mu_t(1:3),obj.sigma_t(1:3,1:3),3)
-
-            % Plot lndmrk cov
-            col = ['y','m','c','g','k'];
-            
-            for i = 1:size(obj.lndmrk_id,2)
-                ln = 4+(2*(i-1));
-                plot_cov(obj.mu_t(ln:ln+1),obj.sigma_t(ln:ln+1,ln:ln+1),3); %ln:ln+1
-                scatter(obj.mu_t(ln),obj.mu_t(ln+1),col(i))
-            end
-            
-            hold off
-            
             state = obj.mu_t;
+            sig = obj.sigma_t;
              
         end
     end

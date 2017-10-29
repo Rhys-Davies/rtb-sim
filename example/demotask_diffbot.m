@@ -2,6 +2,8 @@ function [] = demotask_diffbot()
 
 clc
 
+startup_mvtb;
+
 % All API functions use SI units.
 
 fig = figure(1);
@@ -10,7 +12,7 @@ cla
 
 %% Problem parameters
 
-init_pos = [.5,.5,pi/2];
+init_pos = [.5,.5,0];
 lndmrks_need = [29,38];
 rescue_point = [];
 
@@ -34,14 +36,13 @@ pos27 = l27.position(mref);
 Y = [pos45(2),pos57(2),pos38(2),pos29(2),pos27(2)];
 X = [pos45(1),pos57(1),pos38(1),pos29(1),pos27(1)];
 
-figure(fig)
-scatter(X,Y,'*r');
+
 
 %% Continue as normal
 
 s.startSim();
 db = s.diffBot('diffBot');
-ekf = demoEKF(init_pos,0.01,0.01,0.01,0.01,fig);
+ekf = demoEKF(init_pos,0.01,0.01,0.01,0.01);
 
 run = true;
 state = 'initekf';
@@ -59,13 +60,16 @@ while run
         case 'initekf'
             
             odo = [0,0];
+            state = 'start_scan';
+        
+        case 'start_scan'
+            
+            odo = turn(db,deg2rad(90));
             state = 'turn';
 
         case 'turn'
-    
-                disp(rad2deg(Z(2)))
-                odo = turn(db,Z(2));
-                disp(rad2deg(odo(2)))
+  
+                odo = turn(db,-deg2rad(45));
                 state = 'translate';
 
         case 'translate'
@@ -107,17 +111,18 @@ while run
             break;
             
     end
-%     
+
+
     im = db.rgbdcamera.image();
     lnd = findLandmarks(im);
-    state_vec = ekf.update(odo,lnd);
-    lnd_found = ekf.lndmrk_id;
+    [mu_t,sigma_t] = ekf.update(odo,lnd);
+    lndmrk_id = ekf.lndmrk_id;
   
     %% Plot Actual Landmark and Robot States.
     
     halfFOV = deg2rad(90);
     coneLength = 0.2;
-    
+         
     pos_true = db.position(mref);
     ori_true = db.orientation(mref);
     x_true = pos_true;
@@ -129,9 +134,45 @@ while run
     RX = x_true(1) + (coneLength)*cos(x_true(3)+halfFOV);
     RY = x_true(2) + (coneLength)*sin(x_true(3)+halfFOV);
     
+    viewPortLX = mu_t(1) + (coneLength)*cos(mu_t(3));
+    viewPortLY = mu_t(2) + (coneLength)*sin(mu_t(3));
+
+    viewPortRX = mu_t(1) + (coneLength)*cos(mu_t(3)+halfFOV);
+    viewPortRY = mu_t(2) + (coneLength)*sin(mu_t(3)+halfFOV);
+    
+    figure(fig)
+    axis([-1,9,-1,9]);
+    
+    hold on
+    
+    
+    scatter(X,Y,'*r');
+    
     line3 = line([x_true(1),LX],[x_true(2),LY],'Color','Green');
     line4 = line([x_true(1),RX],[x_true(2),RY],'Color','Black');
     
+    line1 = line([mu_t(1),viewPortLX],[mu_t(2),viewPortLY],'Color','Red');
+    line2 = line([mu_t(1),viewPortRX],[mu_t(2),viewPortRY],'Color','Blue');
+
+    
+
+    % Plot robot cov
+    plot_cov(mu_t(1:3),sigma_t(1:3,1:3),3)
+
+    % Plot lndmrk cov
+    col = ['y','m','c','g','k'];
+
+    for i = 1:size(lndmrk_id,2)
+        ln = 4+(2*(i-1));
+        plot_cov(mu_t(ln:ln+1),sigma_t(ln:ln+1,ln:ln+1),3); %ln:ln+1
+        scatter(mu_t(ln),mu_t(ln+1),col(i))
+    end
+    
+    
+    hold off
+    
+            
+         
 end
 
 
@@ -345,8 +386,9 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            lndid = bi2de([de2bi(id(1),2),de2bi(id(2),2),de2bi(id(3),2)]);
            
            distance = (.10*640)/height;
-           
-           if distance < 5.5
+           ratio = height/width;
+                      
+           if (distance < 5.5) && (ratio > .4999)
            
                lnd(tally,1) = distance + .175;
 

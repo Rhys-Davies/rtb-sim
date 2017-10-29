@@ -75,7 +75,7 @@ classdef sim_sensor < sim_entity
         %% sim_sensor.set_resolution(new)
         % Sets the resolution of the sensor to 'new'
         % 
-        % Arguments
+        % Arguments:
         %   new         % A 2-vector that contains [width, height]
         %
         
@@ -89,7 +89,7 @@ classdef sim_sensor < sim_entity
         %% sim_sensor.set_resolution(new)
         % Sets the resolution of the sensor to 'new'
         % 
-        % Arguments
+        % Arguments:
         %   new         % An angle in radians.
         %
         

@@ -1,17 +1,21 @@
 %% VREP Simulator Class
-
-
-%% Notes:
-%   Return codes can be returned as any combination of bits... error
-%   catching method may need a rewrite to handle combined errors.
-%%
-
-% properties
+% NOTE: All VREP API Functions use SI Units!
+%
+% Properties
+%
 %         clientID
+%         sim
+%         PORT
+%         IP
+%         clientID
+%         path
+%         libpath
+%         getter_mode
+%         setter_mode
+%         blocking_mode
 
 % 
-% These methods are abstract methods in the simulator class that must be
-% defined
+% Methods:
 %         
 %     % Generic object management
 %         handle = getHandle(obj_name)
@@ -136,57 +140,8 @@
 % See http://www.coppeliarobotics.com/helpFiles/en/objectParameterIDs.htm
 % for a complete list of parameters.
 
-%% Valid Object Type Arguments for getObjects() (and their respective VREP object types)
-
-%         Show a list of all objects in the scene. Optionally specify a
-%         particular type of object to return only objects of that type.
-%         
-%         -----------------
-%         Object Types:
-%         -----------------
-%         shape - sim_object_shape_type
-%         joint - sim_object_joint_type
-%         graph - sim_object_graph_type
-%         camera - sim_object_camera_type
-%         light - sim_object_light_type
-%         dummy - sim_object_dummy_type
-%         proximity_sensor - sim_object_proximitysensor_type
-%         path - sim_object_path_type
-%         vision_sensor - sim_object_visionsensor_type
-%         mill - sim_object_mill_type
-%         force_sensor - sim_object_forcesensor_type
-%         mirror - sim_object_mirror_type
-%         -----------------
-%         Object Subtypes  
-%         -----------------
-%         omni_light - sim_light_omnidirectional_subtype
-%         spot_light - sim_light_spot_subtype
-%         directional_light - sim_light_directional_subtype
-%         revolute_joint - sim_joint_revolute_subtype
-%         prismatic_joint - sim_joint_prismatic_subtype
-%         spherical_joint - sim_joint_spherical_subtype
-%         simple_shape - sim_shape_simpleshape_subtype
-%         multi_shape - sim_shape_multishape_subtype
-%         ray_proximity_sensor - sim_proximitysensor_ray_subtype
-%         pyramid_proximity_sensor - sim_proximitysensor_pyramid_subtype
-%         cylinder_proximity_sensor - sim_proximitysensor_cylinder_subtype
-%         disc_proximity_sensor - sim_proximitysensor_disc_subtype
-%         cone_proximity_sensor - sim_proximitysensor_cone_subtype
-%         pyramid_mill -  sim_mill_pyramid_subtype
-%         cylinder_mill - sim_mill_cylinder_subtype
-%         disc_mill - sim_mill_disc_subtype
-%         cone_mill - sim_mill_cone_subtype   
-
-%%        Vision Sensor Parameters
-%         sim_visionfloatparam_near_clipping (1000): float parameter : near clipping plane
-%         sim_visionfloatparam_far_clipping (1001): float parameter : far clipping plane
-%         sim_visionintparam_resolution_x (1002): int32 parameter : resolution x
-%         sim_visionintparam_resolution_y (1003): int32 parameter : resolution y
-%         sim_visionfloatparam_perspective_angle (1004): float parameter : perspective projection angle
-%         [r,msg] = obj.sim.simxGetFloatParameter(onj.clientID,target,obj.mode);
-%         [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
         
-classdef VREP < handle %simulator no need to inherit from this now... no more gazebo
+classdef VREP < handle %simulator no need to inherit from this
     
     properties
         sim
@@ -195,7 +150,6 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         clientID
         path
         libpath
-        mode
         getter_mode
         setter_mode
         blocking_mode
@@ -243,17 +197,15 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
             parse(p,varargin{:});
             
+            obj.blocking_mode = obj.sim.simx_opmode_blocking;
             obj.getter_mode = p.Results.getter_mode;
             obj.setter_mode = p.Results.setter_mode;
+            
             obj.IP = p.Results.IP;
             obj.PORT = p.Results.PORT;
             path = p.Results.path;
-            %%
             
-            obj.blocking_mode = obj.sim.simx_opmode_blocking;
-            
-            
-            %% Check if all the VREP API files are already on path
+            % Check if all the VREP API files are already on path
             if ispc == true
                 file1 = exist('remoteApi.dll');
             elseif isunix == true
@@ -268,7 +220,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             file3 = exist('remoteApiProto.m');
             
   
-            %% Prioritize specified path over any files found on path, 
+            % Prioritize specified path over any files found on path, 
             % but if no install folder found, fall back to files already found 
             % on MATLAB path (if any).
             
@@ -303,7 +255,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
                 
             end
             
-            %% Initialize the simulator.
+            % Initialize the simulator.
             
             obj.clientID = obj.sim.simxStart(obj.IP,obj.PORT,p.Results.wait, ...
                 p.Results.reconnect,p.Results.timeout,p.Results.cycle);
@@ -326,7 +278,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             %   of an expression is a VREP object and the command has no trailing
             %   semicolon.
             %
-            % See also VREP.char.
+
             
             loose = strcmp( get(0, 'FormatSpacing'), 'loose');
             if loose
@@ -342,7 +294,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             % V.char() is a string representation the VREP parameters in human
             % readable foramt.
             %
-            % See also VREP.display.
+
 
             s = sprintf('V-REP robotic simulator interface (active=%d)', obj.checkcomms() );
 
@@ -387,7 +339,9 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function delete(obj)
         % VREP.delete
-        % Destroy the simulator object and cleanup   
+        %
+        % Destroy the simulator object and cleanup. 
+        %
 
             obj.sim.simxFinish(obj.clientID);
             obj.sim.simxFinish(-1);
@@ -400,6 +354,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
          
         function pauseComms(obj,status)
         % VREP.pauseComms
+        %
         % Pauses the communication thread, preventing it from sending
         % and receiving data. Useful for sending multiple commands that
         % are to be recieved and evaluated simultaniously.
@@ -420,7 +375,8 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function pauseSim(obj)  
         % VREP.pauseSim
-        % Pauses the simulation.
+        %
+        % Pauses the current simulation.
         %
             
             r = obj.sim.simxPauseSimulation(obj.clientID,obj.setter_mode);
@@ -433,6 +389,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
         function startSim(obj) 
         % VREP.startSim
+        %
         % Starts the simulation. This must be run before any other commands
         % are called.
         %
@@ -447,7 +404,9 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function stopSim(obj)
         % VREP.stopSim
-        % Stops the simulation.
+        %
+        % Stops the simulation. V-REP will automatically reset the scene to
+        % the state it was in before VREP.startSim was called.
         %
             
             r = obj.sim.simxStopSimulation(obj.clientID,obj.setter_mode);
@@ -461,16 +420,22 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function r = checkcomms(obj)
         % VREP.checkcomms
+        %
         % Retruns the VREP connection ID if a valid connection exists.
         %
             
             r = obj.sim.simxGetConnectionId(obj.clientID);
+            
+            if r ~= 0 && r ~= 1
+                throw(obj.errcheck(r))
+            end
             
         end
         
         
         function loadScene(obj,scene,varargin)
         % VREP.loadScene
+        % %% TODO
         % Loads a specified scene.
         % 
         %
@@ -518,6 +483,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function id = loadObject(obj,model,varargin)
         % VREP.loadSimObject
+        % %% TODO
         % Loads an object/model into the currently open scene. Specify
         % opt = 1 if file is client side, leave blank or specify opt =
         % 0 if file is server side.
@@ -569,8 +535,18 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function deleteObject(obj,handle)
         % VREP.deleteSimObject
-        % Deletes an object with a given handle from currently active V-REP
-        % scene.
+        %
+        % Deletes the specified object with a given handle from currently 
+        % active V-REP scene. 
+        % 
+        % Note: Objects deleted while a simulation is
+        % running will be reinstated when the scene resets (after
+        % VREP.stopSim is called or the simulation is stopped using V-REP's 
+        % GUI.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
         %
             
             r = obj.sim.simxRemoveModel(obj.clientID,handle,obj.setter_mode);
@@ -583,9 +559,11 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function closeScene(obj)
         % VREP.closeScene
+        %
         % Closes the currently open scene and then switches to the next
         % open scene. If no other scenes are open, a new scene will be
         % created.
+        %
             
             obj.stopSim();
             r = obj.sim.simxCloseScene(obj.clientID,obj.setter_mode);
@@ -598,9 +576,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function time = pingSim(obj,n)
         % VREP.pingSim
+        %
         % Ping the VREP API n times.
         % Returns a matrix of all resulting ping times.
-            
+        %
+        % Arguments:
+        %
+        %   n           % Number of pings to send.
+        %
+        %
+        % Returns:
+        %
+        %   time        % An n-length vector containing the time of each
+        %                 ping.
+        %
+        
             temp = [];
             
             for i = 0:n
@@ -622,52 +612,57 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function [objid,name] = getObjects(obj,type)      
         % VREP.getObjects
+        %
         % Show a list of all objects in the scene. Optionally specify a
         % particular type of object to return only objects of that type.
         % 
+        % -----------------
+        % Major Object Types:
+        % -----------------
+        % shape = sim_object_shape_type
+        % joint = sim_object_joint_type
+        % graph = sim_object_graph_type
+        % camera = sim_object_camera_type
+        % light = sim_object_light_type
+        % dummy = sim_object_dummy_type
+        % proximity_sensor = sim_object_proximitysensor_type
+        % path = sim_object_path_type
+        % vision_sensor = sim_object_visionsensor_type
+        % mill = sim_object_mill_type
+        % force_sensor = sim_object_forcesensor_type
+        % mirror = sim_object_mirror_type
+        % -----------------
+        % Object Subtypes  
+        % -----------------
+        % omni_light = sim_light_omnidirectional_subtype
+        % spot_light = sim_light_spot_subtype
+        % directional_light = sim_light_directional_subtype
+        % revolute_joint = sim_joint_revolute_subtype
+        % prismatic_joint = sim_joint_prismatic_subtype
+        % spherical_joint = sim_joint_spherical_subtype
+        % simple_shape = sim_shape_simpleshape_subtype
+        % multi_shape = sim_shape_multishape_subtype
+        % ray_proximity_sensor = sim_proximitysensor_ray_subtype
+        % pyramid_proximity_sensor = sim_proximitysensor_pyramid_subtype
+        % cylinder_proximity_sensor = sim_proximitysensor_cylinder_subtype
+        % disc_proximity_sensor = sim_proximitysensor_disc_subtype
+        % cone_proximity_sensor = sim_proximitysensor_cone_subtype
+        % pyramid_mill =  sim_mill_pyramid_subtype
+        % cylinder_mill = sim_mill_cylinder_subtype
+        % disc_mill = sim_mill_disc_subtype
+        % cone_mill = sim_mill_cone_subtype  
+        %
         % Arguments:
         %
         %   type            % Optionally specifies a type of object to
         %                     return.
         %
-        % The following object types are valid:
+        % Returns:
         %
-        % -----------------
-        % Major Object Types:
-        % -----------------
-        % shape - sim_object_shape_type
-        % joint - sim_object_joint_type
-        % graph - sim_object_graph_type
-        % camera - sim_object_camera_type
-        % light - sim_object_light_type
-        % dummy - sim_object_dummy_type
-        % proximity_sensor - sim_object_proximitysensor_type
-        % path - sim_object_path_type
-        % vision_sensor - sim_object_visionsensor_type
-        % mill - sim_object_mill_type
-        % force_sensor - sim_object_forcesensor_type
-        % mirror - sim_object_mirror_type
-        % -----------------
-        % Object Subtypes  
-        % -----------------
-        % omni_light - sim_light_omnidirectional_subtype
-        % spot_light - sim_light_spot_subtype
-        % directional_light - sim_light_directional_subtype
-        % revolute_joint - sim_joint_revolute_subtype
-        % prismatic_joint - sim_joint_prismatic_subtype
-        % spherical_joint - sim_joint_spherical_subtype
-        % simple_shape - sim_shape_simpleshape_subtype
-        % multi_shape - sim_shape_multishape_subtype
-        % ray_proximity_sensor - sim_proximitysensor_ray_subtype
-        % pyramid_proximity_sensor - sim_proximitysensor_pyramid_subtype
-        % cylinder_proximity_sensor - sim_proximitysensor_cylinder_subtype
-        % disc_proximity_sensor - sim_proximitysensor_disc_subtype
-        % cone_proximity_sensor - sim_proximitysensor_cone_subtype
-        % pyramid_mill -  sim_mill_pyramid_subtype
-        % cylinder_mill - sim_mill_cylinder_subtype
-        % disc_mill - sim_mill_disc_subtype
-        % cone_mill - sim_mill_cone_subtype   
-            
+        %   objid           % A list of VREP object IDs.
+        %   name            % A list of the object names.
+        %
+        
             
             if nargin < 2
                 stype = obj.sim.sim_appobj_object_type;
@@ -732,8 +727,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
                     case 'cone_mill'
                         stype = obj.sim.sim_mill_cone_subtype;
                     otherwise
-                        disp('Unknown object type')
-                        % TODO - Throw exception
+                        error("VREP.getObjects: An invalid/unknown type was specified! (Type: %d)",types);
                 end
             end
 
@@ -747,6 +741,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function [handle] = getHandle(obj, in, varargin)
         % VREP.getHandle
+        %
         % Retrieves the V-REP identifier of an object given its string
         % name.
         %
@@ -754,10 +749,16 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         %
         %   in          % The string name
         %   
-        % Optional Arguments
+        % Optional Arguments:
         %
-        %   
+        %   fmt         % A format specifier. %% TODO Fill out the rest of
+        %                 this
         %
+        % Returns:
+        %
+        %   handle      % The V-REP object ID of the object with a name 
+        %                 matching the one specified.
+        %                
             
             if nargin < 3
                 name = in;
@@ -775,12 +776,17 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function name = getName(obj,objhandle)
         % VREP.getName
-        %  Returns the string name assigned to an object in the VREP
-        %  environment.
         %
+        % Returns the string name assigned to an object in the VREP
+        % environment.
         %
+        % Arguments:
         %
+        %   objhandle       % A V-REP object ID 
         %
+        % Returns:
+        %
+        %   name            % The name associated to the object. 
         %
             
             
@@ -794,24 +800,171 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
         
-        function types = getType(obj,objhandle)
+        function stype = getType(obj,objhandle,str_out)
         % VREP.getType
-        % Retruns the type of an object when given a VREP objectID 
         %
+        % Retruns the type of an object when given a VREP objectID. By 
+        % default returns a string name of the object type as per the list 
+        % below. Set str_out = false to return the type as a VREP API type
+        % identifier.
+        %
+        % -----------------
+        % Major Object Types:
+        % -----------------
+        % shape = sim_object_shape_type
+        % joint = sim_object_joint_type
+        % graph = sim_object_graph_type
+        % camera = sim_object_camera_type
+        % light = sim_object_light_type
+        % dummy = sim_object_dummy_type
+        % proximity_sensor = sim_object_proximitysensor_type
+        % path = sim_object_path_type
+        % vision_sensor = sim_object_visionsensor_type
+        % mill = sim_object_mill_type
+        % force_sensor = sim_object_forcesensor_type
+        % mirror = sim_object_mirror_type
+        % -----------------
+        % Object Subtypes  
+        % -----------------
+        % omni_light = sim_light_omnidirectional_subtype
+        % spot_light = sim_light_spot_subtype
+        % directional_light = sim_light_directional_subtype
+        % revolute_joint = sim_joint_revolute_subtype
+        % prismatic_joint = sim_joint_prismatic_subtype
+        % spherical_joint = sim_joint_spherical_subtype
+        % simple_shape = sim_shape_simpleshape_subtype
+        % multi_shape = sim_shape_multishape_subtype
+        % ray_proximity_sensor = sim_proximitysensor_ray_subtype
+        % pyramid_proximity_sensor = sim_proximitysensor_pyramid_subtype
+        % cylinder_proximity_sensor = sim_proximitysensor_cylinder_subtype
+        % disc_proximity_sensor = sim_proximitysensor_disc_subtype
+        % cone_proximity_sensor = sim_proximitysensor_cone_subtype
+        % pyramid_mill = sim_mill_pyramid_subtype
+        % cylinder_mill = sim_mill_cylinder_subtype
+        % disc_mill = sim_mill_disc_subtype
+        % cone_mill = sim_mill_cone_subtype  
+        %
+        % Arguments:
+        %   
+        %   objhandle       % A V-REP object ID.
+        %
+        % Optional Arguments:
+        %
+        %   str_out         % Logical argument that switches the output 
+        %                     between a string (str_out = true) or the VREP
+        %                     API representation of object types (an
+        %                     integer).
+        %
+        % Returns:
+        %
+        %   stype           % The type of object. Depending on str_out,
+        %                     this will be either a string or a VREP API
+        %                     constant.
+        %
+            
+            if nargin < 3
+                str_out = true;
+            else
+                if ~islogical(vrepout)
+                    error("VREP.getType: str_out must be logical (true or false)");
+                end  
+            end
+            
         
             [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.blocking_mode);
             
-           if r ~= 0 && r ~= 1
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
             types = types(objid == objhandle);
-        
+            
+            if str_out
+            
+                switch (types)
+                    case obj.sim.sim_object_shape_type
+                        stype = 'shape';
+                    case obj.sim.sim_object_joint_type
+                        stype = 'joint';
+                    case obj.sim.sim_object_graph_type
+                        stype = 'graph';
+                    case obj.sim.sim_object_camera_type
+                        stype = 'camera';
+                    case obj.sim.sim_object_light_type
+                        stype = 'light';
+                    case obj.sim.sim_object_dummy_type
+                        stype = 'dummy';
+                    case obj.sim.sim_object_proximitysensor_type
+                        stype = 'proximity_sensor';
+                    case obj.sim.sim_object_path_type
+                        stype = 'path';
+                    case obj.sim.sim_object_visionsensor_type
+                        stype = 'vision_sensor';
+                    case obj.sim.sim_object_mill_type
+                        stype = 'mill';
+                    case obj.sim.sim_object_forcesensor_type
+                        stype = 'force_sensor';
+                    case obj.sim.sim_object_mirror_type
+                        stype = 'mirror';
+                    case obj.sim.sim_light_omnidirectional_subtype
+                        stype = 'omni_light';
+                    case obj.sim.sim_light_spot_subtype
+                        stype = 'spot_light';
+                    case obj.sim.sim_light_directional_subtype
+                        stype = 'directional_light';
+                    case obj.sim.sim_joint_revolute_subtype
+                        stype = 'revolute_joint';
+                    case obj.sim.sim_joint_prismatic_subtype
+                        stype = 'prismatic_joint';
+                    case obj.sim.sim_joint_spherical_subtype
+                        stype = 'spherical_joint';
+                    case obj.sim.sim_shape_simpleshape_subtype
+                        stype = 'simple_shape';
+                    case obj.sim.sim_shape_multishape_subtype
+                        stype = 'multi_shape';
+                    case obj.sim.sim_proximitysensor_ray_subtype
+                        stype = 'ray_proximity_sensor';
+                    case obj.sim.sim_proximitysensor_pyramid_subtype
+                        stype = 'pyramid_proximity_sensor';
+                    case obj.sim.sim_proximitysensor_cylinder_subtype
+                        stype = 'cylinder_proximity_sensor';
+                    case obj.sim.sim_proximitysensor_disc_subtype
+                        stype = 'disc_proximity_sensor';
+                    case obj.sim.sim_proximitysensor_cone_subtype
+                        stype = 'cone_proximity_sensor';
+                    case obj.sim.sim_mill_pyramid_subtype
+                        stype = 'pyramid_mill';
+                    case obj.sim.sim_mill_cylinder_subtype
+                        stype = 'cylinder_mill';
+                    case obj.sim.sim_mill_disc_subtype
+                        stype = 'disc_mill';
+                    case obj.sim.sim_mill_cone_subtype
+                        stype = 'cone_mill';
+                    otherwise
+                        error("VREP.getType: Object is an unknown type! (Type: %d)",types);
+                end
+                
+            else
+                
+               stype = types; 
+               
+            end
+                
         end
         
         function children = getChildren(obj,handle)
         % VREP.getChildren
+        %
         % Returns all child objects associated with an object.
+        %
+        % Argumets:
+        %
+        %   handle      % A VREP Object ID
+        %
+        % Returns:
+        %
+        %   children    % An array containing the VREP object ID's of all
+        %                 child objects found.
         %
             
             i = 0;
@@ -836,13 +989,23 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function orient = getOrientation(obj,handle,rel2)
         % VREP.getOrientation
-        % Returns the euler angles representing an object's orientation in
-        % 3D space.
+        %
+        % Returns a set of euler angles representing an object's 
+        % orientation in 3D space.
         %
         % Arguments:
         %
-        %   rel2        % If specified, the orentation will be returned in
+        %   handle      % A VREP object ID. 
+        %
+        % Optional Arguments:
+        %
+        %   rel2         % If specified, the orentation will be returned in
         %                 the reference frame of this object. 
+        %
+        % Returns:
+        %
+        %   orient       % A three vector containing the object's [X, Y, Z] 
+        %                  rotations in Radians.
         %
 
                         
@@ -863,13 +1026,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
         function pos = getPosition(obj,handle,rel2)
         % VREP.getPosition
-        % Returns a 3-vector of [x,y,z], representing an objects position
-        % in 3D space.
+        % Returns the object's position in 3D space.
         %
         % Arguments:
         %
+        %   handle      % A VREP object ID
+        %
+        % Optional Arguments:
+        %
         %   rel2        % If specified, the position will be returned in
         %                 the reference frame of this object. 
+        %
+        % Returns:
+        %
+        %   pos         % A 3-vector representing the object's position
+        %                 [X, Y, Z] in Meters.
         %
 
             
@@ -890,8 +1061,19 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function setPosition(obj,handle,new,rel2)
         % VREP.setPosition
-        % rel2 = -1 for global frame
-        % else rel2 is the clientID of an object.
+        % Sets an object's position in 3D space.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   new         % A 3-vector containing the object's new position
+        %                 [X,Y,Z] in Meters.
+        %
+        % Optional Arguments:
+        %
+        %   rel2        % If specified, the position will be set in
+        %                 the reference frame of this object. 
+        %
             
             if nargin < 4
                 rel2 = -1;
@@ -909,9 +1091,23 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
         
         function setOrientation(obj,handle,orient,rel2)
-        % VREP.setOrientation
-        % rel2 = -1 for global frame
-        % 
+        % VREP.getOrientation
+        %
+        % Returns a set of euler angles representing an object's 
+        % orientation in 3D space.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID. 
+        %
+        % Optional Arguments:
+        %
+        %   rel2         % If specified, the orentation will be returned in
+        %                 the reference frame of this object. 
+        %   orient       % A three vector containing the object's [X, Y, Z] 
+        %                  rotations in Radians.
+        %
+
             
             if nargin < 4
                 rel2 = -1;
@@ -927,10 +1123,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
 %%      Joint Specific Methods
 
-        function pos = getJointPosition(obj,handle,varargin)
+        function pos = getJointPosition(obj,handle)
         % VREP.getJointPosition
+        %
         % Returns the intrinsic position of a joint. Cannot be used with
         % spherical joints
+        %
+        % Argumets:
+        %
+        %   handle      % A VREP object ID.
+        %
+        % Returns:
+        %
+        %   pos         % The current joint position in Radians.
+        %
         
             opmode = obj.getter_mode;
         
@@ -944,10 +1150,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         end
         
-        function matrix = getJointMatrix(obj,handle,varargin)
-        % VREP.getJointMatrix    
-        % Returns the intrisic matrix of a spherical joint.
+        function matrix = getJointMatrix(obj,handle)
+        % VREP.getJointMatrix
+        %
+        % Returns the intrinsic position of a spherical joint as a matrix.
         % 
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %
+        % Returns:
+        %
+        %   matrix      % A 12 element matrix containing the intrinsic
+        %                 position of the joints. Applicable only to
+        %                 spherical joints.
+        %
         
             opmode = obj.getter_mode;
         
@@ -960,13 +1177,29 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
         
 
-        function force = getJointForce(obj,handle,varargin)
+        function force = getJointForce(obj,handle)
         % VREP.getJointForce
-        % For prismatic and revolute joints only
+        %
+        % Gets the force applied to a joint. For prismatic and revolute
+        % joints only.
+        %
+        % NOTE!: 
         % When using the bullet physics engine, returns force or torque
         % applied to the joint motor.
         % When using the ODE or Vortex engines, returns the total force or
-        % torque applied to a joint around/along its z-axis.
+        % torque applied to a joint around/along its z-axis. 
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %
+        % Returns:
+        %
+        %   force       % The force applied in Nm. The exact result of this
+        %                 is dependant on the Physics Engine in use. Please
+        %                 see the description above for specifics.
+        %                 
+
         
             opmode = obj.getter_mode;
         
@@ -975,12 +1208,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
+            
         end
           
         function setSphericalJointMatrix(obj,handle,matrix)
         % VREP.setSphericalJointMatrix
-        % TODO: Check to make sure matrix contains 12 elements
-        % Can only be used for spherical joints.
+        %
+        % Sets the position of a spherical joint. This method has no effect
+        % on other joint types.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   matrix      % 12 element matrix containing intrinsic position.
+        %
+
         
             r = obj.sim.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.setter_mode);
                       
@@ -992,8 +1234,17 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function setJointForce(obj,handle,force)
         % VREP.setJointForce
-        % Has no effect if joint is not dynamically enabled.
-        % Also has no effect if joint is spherical
+        %
+        % Sets the force acting on a joint. Joint must be dynamically
+        % enabled and must be revolute or prismatic. This method is not
+        % applicable to spherical joints.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID.
+        %   force       % A force in Nm.
+        % 
+        
         
             r = obj.sim.simxSetJointForce(obj.clientID,handle,force,obj.setter_mode);
             
@@ -1005,8 +1256,18 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function setJointPosition(obj,handle,pos)
         % VREP.setJointPosition
-        % Cannot be used on spherical joints
-        % May have no effect with certain joint modes
+        %
+        % Sets the position of a joint. This method will snap the joint to
+        % the specified position, to rotate a joint using the joint motor,
+        % see VREP.setJointTargetPosition
+        % May have no effect with certain joint modes.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   pos         % An angular position in Tadians.
+        %
+        
         
             r = obj.sim.simxSetJointPosition(obj.clientID,handle,pos,obj.setter_mode);
            
@@ -1017,10 +1278,18 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
             
         function setJointTargetPosition(obj,handle,pos)
-        % VREP.setJointTargetPosition    
+        % VREP.setJointTargetPosition
+        %
         % Sets joint target position. Only works if joint is in
         % torque/force mode and if its motor and position control are
-        % enabled
+        % enabled. The maximum torque and/or velocity will be as set in the
+        % joint's dynamic properties dialog box in VREP.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID.
+        %   pos         % An angular position in Radians.
+        %
         
             r = obj.sim.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.setter_mode);
 
@@ -1032,9 +1301,16 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         function setJointTargetVelocity(obj,handle,vel)
         % VREP.setJointTargetVelocity
+        %
         % Sets a non-spherical joint's target velocity. Joint needs to be
         % in torque/force mode with dynamics and joint motor enabled, and
         % position control disabled.
+        %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   vel         % An angular velocity in Radians/sec
+        %
         
             r = obj.sim.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.setter_mode);
             
@@ -1046,12 +1322,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
 %% Object Parameters
 
-        function setObjIntParam(obj,target,param,new)
+        function setObjIntParam(obj,handle,param,new)
         % VREP.setObjIntParam
+        %
         % Sets a specified integer parameter for a given object.
         %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   param       % The parameter identifier (use the numerical
+        %                 identifier, not the VREP API prototype)
+        %   new         % The new value. Must be an integer.
+        %
             
-            r = obj.sim.simxSetObjectIntParameter(obj.clientID, target, param, new, obj.setter_mode);
+            r = obj.sim.simxSetObjectIntParameter(obj.clientID, handle, param, new, obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1059,12 +1343,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
         
-        function setObjFloatParam(obj,target,param,new)
+        function setObjFloatParam(obj,handle,param,new)
         % VREP.setObjFloatParam
+        %
         % Sets a specified float parameter for a given object.
         %
-            
-            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,target,param, new, obj.setter_mode);
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %   new         % The new value. Must be a float.
+        %    
+        
+            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,handle,param, new, obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1072,12 +1365,24 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
                     
         end
         
-        function param = getObjIntParam(obj,target,param)
+        function res = getObjIntParam(obj,handle,param)
         % VREP.getObjIntParam
+        %
         % Gets a specified integer parameter from a given object.
         %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
+        %
             
-            [r, param] = obj.sim.simxGetObjectIntParameter(obj.clientID,target,param,obj.getter_mode);
+            [r, res] = obj.sim.simxGetObjectIntParameter(obj.clientID,handle,param,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1085,12 +1390,24 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
         
-        function param = getObjFloatParam(obj,target,param)
+        function param = getObjFloatParam(obj,handle,param)
         % VREP.getObjFloatParam
+        %
         % Gets a specified integer parameter from a given object.
         %
+        % Arguments:
+        %
+        %   handle      % A VREP object ID
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
+        %
             
-            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,target,param,obj.getter_mode);
+            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,handle,param,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1100,12 +1417,23 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
 %% Parameter Management
 
-        function param = getIntegerParam(obj,target)
+        function res = getIntegerParam(obj,param)
         % VREP.getIntegerParam
         %
+        % Gets a specified global integer parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
         %
             
-            [r,param] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.getter_mode);
+            [r,res] = obj.sim.simxGetIntegerParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1113,12 +1441,23 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function param = getFloatParam(obj,target)
+        function res = getFloatParam(obj,param)
         % VREP.getFloatParam
         %
+        % Gets a specified global float parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
         %
             
-            [r,param] = obj.sim.simxGetFloatingParameter(obj.clientID,target,obj.getter_mode);
+            [r,res] = obj.sim.simxGetFloatingParameter(obj.clientID,param,obj.getter_mode);
           
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1126,12 +1465,23 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function param = getBooleanParam(obj,target)
+        function res = getBooleanParam(obj,param)
         % VREP.getBooleanParam
         %
+        % Gets a specified global boolean parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
         %
             
-            [r,param] = obj.sim.simxGetBooleanParameter(obj.clientID,target,obj.getter_mode);
+            [r,res] = obj.sim.simxGetBooleanParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1139,12 +1489,22 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function param = getStringParam(obj,target)
+        function res = getStringParam(obj,param)
         % VREP.getStringParam
         %
+        % Gets a specified global string parameter.
         %
-            
-            [r,param] = obj.sim.simxGetStringParameter(obj.clientID,target,obj.getter_mode);
+        % Arguments:
+        %
+        %   param       % The parameter identifier (using the numerical
+        %                 identifier and not the VREP API prototype seems
+        %                 to be more reliable)
+        %
+        % Returns:
+        %
+        %   res        % The value of the parameter.
+        %
+            [r,res] = obj.sim.simxGetStringParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1152,12 +1512,19 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setIntegerParam(obj,target, param)
+        function setIntegerParam(obj,param,new)
         % VREP.setIntegerParam
         %
+        % Sets a specified global integer parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (use the numerical
+        %                 identifier, not the VREP API prototype)
+        %   new         % New value. Must be an integer.
         %
             
-            r = obj.sim.simxGetIntegerParameter(obj.clientID,target,param,obj.setter_mode);
+            r = obj.sim.simxGetIntegerParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1165,12 +1532,19 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setFloatParam(obj, target, param)
+        function setFloatParam(obj, param, new)
         % VREP.setFloatParam
         %
+        % Sets a specified global float parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (use the numerical
+        %                 identifier, not the VREP API prototype)
+        %   new         % New value. Must be a float.
         %
             
-            r = obj.sim.simxGetFloatParameter(obj.clientID,target,param,obj.setter_mode);
+            r = obj.sim.simxGetFloatParameter(obj.clientID,param,new,obj.setter_mode);
           
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1178,12 +1552,19 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setBooleanParam(obj, target, param)
+        function setBooleanParam(obj, param, new)
         % VREP.setBooleanParam
         %
+        % Sets a specified global boolean parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (use the numerical
+        %                 identifier, not the VREP API prototype)
+        %   new         % New value. Must be boolean/logical.
         %
             
-            r = obj.sim.simxGetBooleanParameter(obj.clientID,target,param,obj.setter_mode);
+            r = obj.sim.simxGetBooleanParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1191,12 +1572,19 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setStringParam(obj, target, param)
+        function setStringParam(obj, param, new)
         % VREP.setStringParam
         %
+        % Sets a specified global string parameter.
+        %
+        % Arguments:
+        %
+        %   param       % The parameter identifier (use the numerical
+        %                 identifier, not the VREP API prototype)
+        %   new         % New value. Must be a string.
         %
             
-            r = obj.sim.simxGetStringParameter(obj.clientID,target,param,obj.setter_mode);
+            r = obj.sim.simxGetStringParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1205,18 +1593,25 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
         
         
-
-
-
             
 %% Signal management
 
  
-        function sig = getIntegerSignal(obj,signalName)
+        function res = getIntegerSignal(obj,signal)
         % VREP.getIntegerSignal
         %
+        % Retrieves an integer signal.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %
+        % Returns:
+        %
+        %   res         % The contents of the signal.
+        %
             
-            [r,sig] = obj.sim.simxGetIntegerSignal(obj.clientID,signalName,obj.getter_mode);
+            [r,res] = obj.sim.simxGetIntegerSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1224,9 +1619,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function sig = getFloatSignal(obj,signalName)
+        function sig = getFloatSignal(obj,signal)
+        % VREP.getFloatSignal
+        %
+        % Retrieves a float signal.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %
+        % Returns:
+        %
+        %   res         % The contents of the signal.
+        %    
             
-            [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,signalName,obj.getter_mode);
+            [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1234,9 +1641,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
            
         end
 
-        function sig = getBooleanSignal(obj,signalName)
-            
-            [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signalName,obj.getter_mode);
+        function sig = getBooleanSignal(obj,signal)
+        % VREP.getBooleanSignal
+        %
+        % Retrieves a boolean signal.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %
+        % Returns:
+        %
+        %   res         % The contents of the signal.
+        %    
+                
+            [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1244,9 +1663,21 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
            
         end
 
-        function sig = getStringSignal(obj,signalName)
-            
-            [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,signalName,obj.getter_mode);
+        function sig = getStringSignal(obj,signal)
+        % VREP.getStringSignal
+        %
+        % Retrieves a string signal.
+        %
+        % Arguments:
+        %
+        %   signal      A string identifying the desired signal.
+        %
+        % Returns:
+        %
+        %   res         % The contents of the signal.
+        %        
+        
+            [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,signal,obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1254,9 +1685,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         end
 
-        function setIntegerSignal(obj,signalName,value)
+        function setIntegerSignal(obj,signal,new)
+        % VREP.setIntegerSignal
+        %
+        % Sets an Integer signal. Caution! If a signal matching the given 
+        % name is not present an error will not be thrown, instead a new 
+        % signal will be created. This is a quirk of the VREP Remote API.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %   new         % The new signal value, this must be an Integer.
+        %    
             
-            r = obj.sim.simxSetIntegerSignal(obj.clientID,signalName,value,obj.getter_mode);
+            r = obj.sim.simxSetIntegerSignal(obj.clientID,signal,new,obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1264,9 +1706,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setFloatSignal(obj,signalName,value)
+        function setFloatSignal(obj,signal,new)
+        % VREP.setFloatSignal
+        %
+        % Sets a Float signal. Caution! If a signal matching the given 
+        % name is not present an error will not be thrown, instead a new 
+        % signal will be created. This is a quirk of the VREP Remote API.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %   new         % The new signal value, this must be a Float.
+        %    
             
-            r = obj.sim.simxSetFloatSignal(obj.clientID,signalName,value,obj.getter_mode);
+            r = obj.sim.simxSetFloatSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1274,9 +1727,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
             
         end
 
-        function setBooleanSignal(obj,signalName,value)
-            
-            r = obj.sim.simxSetBooleanSignal(obj.clientID,signalName,value,obj.getter_mode);
+        function setBooleanSignal(obj,signal,new)
+        % VREP.setBooleanSignal
+        %
+        % Sets a Boolean signal. Caution! If a signal matching the given 
+        % name is not present an error will not be thrown, instead a new 
+        % signal will be created. This is a quirk of the VREP Remote API.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %   new         % The new signal value, this must be a Boolean.
+        %      
+        
+            r = obj.sim.simxSetBooleanSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1284,9 +1748,20 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
            
         end
 
-        function setStringSignal(obj,signalName,value)
+        function setStringSignal(obj,signal,new)
+        % VREP.setStringSignal
+        %
+        % Sets a String signal. Caution! If a signal matching the given 
+        % name is not present an error will not be thrown, instead a new 
+        % signal will be created. This is a quirk of the VREP Remote API.
+        %
+        % Arguments:
+        %
+        %   signal      % A string identifying the desired signal.
+        %   new         % The new signal value, this must be a String.
+        % 
             
-            r = obj.sim.simxSetStringSignal(obj.clientID,signalName,value,obj.getter_mode);
+            r = obj.sim.simxSetStringSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1294,9 +1769,18 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
            
         end
         
-        function clearIntegerSignal(obj,signalName)
+        function clearIntegerSignal(obj,signal)
+        % VREP.clearIntegerSignal
+        %
+        % Removes a named Integer signal. If an empty string is passed
+        % instead of a signal name, all Integer signals will be cleared. 
+        %
+        % Arguments:
+        %   
+        %   signal      % A string identifying the desired signal.
+        %
             
-            r = obj.sim.simxClearIntegerSignal(obj.clientID,signalName,obj.setter_mode);
+            r = obj.sim.simxClearIntegerSignal(obj.clientID,signal,obj.setter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1305,6 +1789,15 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
 
         function clearFloatSignal(obj,signalName)
+        % VREP.clearFloatSignal
+        %
+        % Removes a named Float signal. If an empty string is passed
+        % instead of a signal name, all Float signals will be cleared. 
+        %
+        % Arguments:
+        %   
+        %   signal      % A string identifying the desired signal.
+        %
                
             r = obj.sim.simxClearFloatSignal(obj.clientID,signalName,obj.setter_mode);
         
@@ -1315,6 +1808,15 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
 
         function clearBooleanSignal(obj,signalName)
+        % VREP.clearBooleanSignal
+        %
+        % Removes a named Boolean signal. If an empty string is passed
+        % instead of a signal name, all Boolean signals will be cleared. 
+        %
+        % Arguments:
+        %   
+        %   signal      % A string identifying the desired signal.
+        %
             
             r = obj.sim.simxClearBooleanSignal(obj.clientID,signalName,obj.setter_mode);
         
@@ -1325,6 +1827,15 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
 
         function clearStringSignal(obj,signalName)
+        % VREP.clearStringSignal
+        %
+        % Removes a named String signal. If an empty string is passed
+        % instead of a signal name, all String signals will be cleared. 
+        %
+        % Arguments:
+        %   
+        %   signal      % A string identifying the desired signal.
+        %
             
             r = obj.sim.simxClearStringSignal(obj.clientID,signalName,obj.setter_mode);
             
@@ -1339,9 +1850,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
 %% Image Sensor Handling
 
-        % Again, condense into one function that takes differnet modes and
-        % datatypes as arguments.
-%           TODO: Check if these are global or object specific. 
+
 %         sim_visionfloatparam_near_clipping (1000): float parameter : near clipping plane
 %         sim_visionfloatparam_far_clipping (1001): float parameter : far clipping plane
 %         sim_visionintparam_resolution_x (1002): int32 parameter : resolution x
@@ -1352,18 +1861,33 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         
         
 
-        function img = readVisionSensor(obj,target,grey)
+        function img = readVisionSensor(obj,handle,grey)
         % VREP.readVisionSensor
+        %
+        % Retrieves an image from a V-REP vision sensor object. This is 
+        % returned as a width-by-height-by-3 matrix or a
+        % width-by-height-by-1 matrix, depending on whether greyscale mode 
+        % is selected. To take an rgb image specify pass false into grey, 
+        % or ignore completely. To take a greyscale image make grey = true.
         %
         % Arguments:
         %
+        %   handle          % The VREP object ID of the sensor.
+        %   grey            % Boolean that that determines whether the 
+        %                     images is greyscale (true) or rgb (false) 
+        % 
+        % Returns
+        %
+        %   img             % An image matrix. Will be h_res-by-v_res-by-3
+        %                     for and rgb image, or h_res-by-v_res-by-1 
+        %                     for a greyscale image.
         %
 
             if nargin < 3
                 grey = false;
             end
             
-            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,target,grey,obj.getter_mode);
+            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,handle,grey,obj.getter_mode);
 
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1372,40 +1896,48 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
         
 
-        function pts = readPointVisionSensor(obj,target)
+        function [auxData, dataIndex] = readPointVisionSensor(obj,handle)
         % VREP.readPointVisionSensor
         %
+        % Retrieves data packets from a vision sensor. Use this when
+        % retreiving data from a vision sensor that has had filters applied
+        % to it. 
+        %
+        % Arguments:
+        %
+        %   handle      % VREP Object ID of vision sensor
+        %
+        % Returns:
+        %
+        %   auxData         % The data packets returned from the sensor
+        %   dataIndex       % The indicies of each data packet returned in
+        %                     auxData.
         %
             
-            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, target, obj.getter_mode);
+            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, handle, obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
-            
-            
-            % First 15 data entries are min max and average of: Intensity,
-            % red, green, blue, and depth. This is the first packet as defined
-            % by dataIndex(1). Entries 16 and 17 are image height and width.
-            
-            w = auxData(dataIndex(1)+1); % Image width (15 + 1)
-            h = auxData(dataIndex(1)+2); % Image height (15 + 2)
-            
-            % dataIndex(1) + 2 + 1 the start of the sensor output data.
-            % 4 rows, w*h columns
-            % Each colum is x,y,z,dist
-            
-            pts = reshape(auxData((dataIndex(1)+2+1):end), 4, w*h);
         
         end
         
 
-        function [res,img] = readVisionSensorDepth(obj,target)
+        function [img] = readVisionSensorDepth(obj,handle)
         % VREP.readVisionSensorDepth
         %
+        % Retrieves a greyscale depth map image from a V-REP vision sensor
+        %
+        % Arguments:
+        %
+        %   handle      % VREP object ID of sensor
+        %
+        % Returns:
+        %
+        %   img         % An image matrix
         %
             
-            [r,res,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,target,obj.getter_mode);
+            [r,~,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,handle,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1419,12 +1951,26 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
 
 
 
-        function [state,torque,force] = readForceSensor(obj,ident)
+        function [state,torque,force] = readForceSensor(obj,handle)
         % VREP.readForceSensor
         %
+        % Retrieve data from a V-REP force sensor. Returns the current
+        % state (broken/unbroken) as well as the torque and force applied
+        % to the sensor.
+        %
+        % Arguments:
+        %
+        %   handle      % V-REP object ID of force sensor.
+        %
+        % Returns:
+        %
+        %   state       % Logical value that represents the state (broken
+        %                 or unbroken) of the sensor.
+        %   torque      % Torque acting on the sensor in Newton Meters
+        %   force       % Force acting on the sensor in Newtons.
         %
             
-           [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,ident,obj.getter_mode);
+           [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,handle,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1433,13 +1979,25 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
         
 
-        function [state,point] = readProximitySensor(obj,ident)
+        function [state,point] = readProximitySensor(obj,handle)
         % VREP.readProximitySensor
+        % 
+        % Reads a V-REP proximity sensor.  
+        % 
+        % Arguments:
         %
+        %   handle      % A proximity sensor V-REP object ID 
+        %
+        % Returns:
+        %
+        %   state       % Logical, whether the proximity sensor has been
+        %                 triggered.
+        %   point       % The coordinates of the triggered point w.r.t. 
+        %                 sensor.
         %
           
      
-           [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,ident,obj.getter_mode); % [r,state,point,found_obj,found_surface] 
+           [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,handle,obj.getter_mode); % [r,state,point,found_obj,found_surface] 
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1448,119 +2006,246 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
         end
         
         
-%% Simulation Objects
+%% Simulation Object Factories.
 
-        function out = entity(obj,ident)
+        function out = entity(obj,handle)
         % VREP.entity
         %
+        % Generates an entity object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % An entity object. 
         %
             
-            out = sim_entity(obj,ident);
+            out = sim_entity(obj,handle);
 
         end
         
-        function out = joint(obj,ident)
+        function out = joint(obj,handle)
         % VREP.joint
         %
+        % Generates an joint object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A joint object. 
+        %
             
-            out = sim_joint(obj,ident);
+            out = sim_joint(obj,handle);
             
         end
                 
-        function out = rgb_sensor(obj,ident)
+        function out = rgb_sensor(obj,handle)
         % VREP.rgb_sensor
+        %
+        % Generates a rgb sensor object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A rgb sensor object. 
+        %
             
-            out = sim_rgb_sensor(obj,ident);
+            out = sim_rgb_sensor(obj,handle);
             
         end
         
-        function out = xyz_sensor(obj,ident)
+        function out = xyz_sensor(obj,handle)
         % VREP.xyz_sensor
         %
+        % Generates a XYZ sensor object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A xyz sensor object. 
+        %
             
-            out = sim_xyz_sensor(obj,ident);
+            out = sim_xyz_sensor(obj,handle);
             
         end
         
-        function out = xy_sensor(obj,ident)
+        function out = xy_sensor(obj,handle)
         % VREP.xy_sensor
         % 
-
-            out = sim_xy_sensor(obj,ident);
+        % Generates a XY sensor object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A xy sensor object. 
+        %
+            out = sim_xy_sensor(obj,handle);
         
         end
         
-        function out = rgbdCamera(obj,ident)
+        function out = rgbdCamera(obj,handle)
         % VREP.rgbdCamera
         %
+        % Generates a RGBD camera object from either an object name or object
+        % ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A rgbd sensor object. 
+        %
             
-            out = sim_cameraRGBD(obj,ident);
+            out = sim_cameraRGBD(obj,handle);
         
         end
         
-        function out = forceSensor(obj,ident)
+        function out = forceSensor(obj,handle)
         % VREP.forceSensor
         %
+        % Generates a force sensor object from either an object name or 
+        % object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A force sensor object. 
+        %
             
-           out = sim_force_sensor(obj,ident);
+           out = sim_force_sensor(obj,handle);
             
         end
         
-        function out = hokuyo(obj,ident,ref)
+        function out = hokuyo(obj,handle,ref)
         % VREP.hokuyo
         %    
+        % Generates a Fast Hokuyo object from either an object name or 
+        % object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A hokuyo object. 
+        %
              
             if nargin < 3
-                out = sim_fast_hokuyo(obj,ident);
+                out = sim_fast_hokuyo(obj,handle);
             else
-                out = sim_fast_hokuyo(obj,ident,ref);
+                out = sim_fast_hokuyo(obj,handle,ref);
             end
             
         end
         
         
-        function out = arm(obj,base,ident,fmt)
+        function out = arm(obj,base_handle,joint_handle,fmt)
         % VREP.arm
         %
-
+        % Generates an Arm object from either an object name or 
+        % object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % An arm object. 
+        %
             if nargin < 4
-                [list,num] = obj.armhelper(ident);
+                [list,num] = obj.armhelper(joint_handle);
             else
-                [list,num] = obj.armhelper(ident,fmt);
+                [list,num] = obj.armhelper(joint_handle,fmt);
             end
             
-             out = sim_arm(obj, base, list, num);
+             out = sim_arm(obj, base_handle, list, num);
             
         end
         
-        function out = youBot(obj,ident)
+        function out = youBot(obj,handle)
         % VREP.youBot
         %
-
-            out = sim_youBot(obj,ident);
+        % Generates a youBot object from either an object name or 
+        % object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % An youBot object. 
+        %
+            out = sim_youBot(obj,handle);
             
         end
         
-        function out = youBotTRS(obj,ident)
+        function out = youBotTRS(obj,handle)
         % VREP.youBotTRS
         %
+        % Generates a TRS modified youBot object from either an object name
+        % or object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % An arm object. 
+        %
 
-            out = sim_youBot_TRS(obj,ident);
+            out = sim_youBot_TRS(obj,handle);
             
         end
         
-        function out = diffBot(obj,ident)
+        function out = diffBot(obj,handle)
         % VREP.diffBot
         %
+        % Generates a diffBot object from either an object name
+        % or object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % An arm object. 
+        %
             
-            out = sim_diffBot(obj,ident);
+            out = sim_diffBot(obj,handle);
         
         end
         
         %% Misc Helpers
 
-        
-        
         function [out,num] = armhelper(obj, name, fmt)
             % Returns a list of valid VREP ID's for an arm
             % Name of joint 0
@@ -1586,7 +2271,7 @@ classdef VREP < handle %simulator no need to inherit from this now... no more ga
                 % if h == 0
                 %   break
                 % end
-                catch ME % I know how to MATLAB, I swear.
+                catch ME % I'm almost ashamed of this.
                    if size(id) == 0
                        rethrow(ME)
                    else

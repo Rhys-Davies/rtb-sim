@@ -16,15 +16,15 @@
 %   pose                Gets the pose of an object relative to another
 %   position            Gets the global position of the object
 %   orientation         Gets the global orientation of the object
-%   get_IntParam        Retrieves the value of object's named integer paramter.
-%   get_FloatParam      Retrieves the value of object's named float paramter.
+%   get_intParam        Retrieves the value of object's named integer paramter.
+%   get_floatParam      Retrieves the value of object's named float paramter.
 %
 %
 %   set_pose            Sets the pose of an object relative to another
 %   set_position        Sets the global position of the object
 %   set_orientation     Sets the global orientation of the object
-%   set_IntParam        Sets object's named integer parameter to a given value.
-%   set_FloatParam      Sets object's name float parameter to a given value.
+%   set_intParam        Sets object's named integer parameter to a given value.
+%   set_floatParam      Sets object's name float parameter to a given value.
 
 classdef sim_entity < handle
     
@@ -32,10 +32,6 @@ classdef sim_entity < handle
         id;
         name;
         sim;
-%         stream_pos; % Is position streamed?.
-%         stream_orient; % Is orientatoin streamed?. 
-%         stream_pos_rel2; % Is position streamed?.
-%         stream_orient_rel2; % Is orientatoin streamed?.
     end
     
     methods
@@ -84,7 +80,7 @@ classdef sim_entity < handle
         
         function out = position(obj,rel2) % position(obj,varargin)
         %% sim_entity.position
-        % Returns [x,y,z] positions of the item 
+        % Returns [x,y,z] positions of the item in Meters.
         %
         
 

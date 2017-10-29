@@ -67,13 +67,21 @@ classdef sim_youBot_TRS < sim_youBot
         
         
         function res = hokuyo_scan()
+            
+            
+            
         end
         
         function res = rgb_image()
+            
+            
         
         end
         
         function res = xyz_image()
+            
+            
+            
         end
         
         

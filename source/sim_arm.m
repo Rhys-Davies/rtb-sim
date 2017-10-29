@@ -78,7 +78,7 @@ classdef sim_arm < sim_entity % < sim_entity
         
             
             if size(state,2) ~= obj.numj
-                error('Number of new angles does not match number of joints');
+                error('sim_arm: Number of new angles does not match number of joints');
             end
                        
             for i=1:obj.numj

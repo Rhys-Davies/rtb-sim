@@ -23,8 +23,6 @@ classdef sim_xy_sensor < sim_sensor
         function obj = sim_xy_sensor(sim,ident)
          
             obj = obj@sim_sensor(sim,ident);
-
-            
             
         end
         

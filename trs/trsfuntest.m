@@ -97,7 +97,7 @@ while true
         case 'rotate' 
             %% First, rotate the robot to go to one table.             % The rotation velocity depends on the difference between the current angle and the target. 
             
-            rotVel = angdiff(angl, youbotOrient(3));
+            rotVel = angdiff(angl, youbotOrient(3))/2;
             
             % When the rotation is done (with a sufficiently high precision), move on to the next state. 
             if (abs(angdiff(angl, youbotOrient(3))) < .1 / 180 * pi) && ...
@@ -111,10 +111,10 @@ while true
             %% Then, make it move straight ahead until it reaches the table. 
             % The further the robot, the faster it drives. (Only check for the first dimension.)
 
-            forwBackVel = -(youbotPos(1) + 3.167);
+            forwBackVel = -(youbotPos(1) + 3.167)/2;
             % If the robot is sufficiently close and its speed is sufficiently low, stop it and move its arm to 
             % a specific location before moving on to the next state.
-            if (youbotPos(1) + 3.167 < .001) && (abs(youbotPos(1) - prevLoc) < .001)
+            if (youbotPos(1) + 3.167 < .001) && (abs(youbotPos(1) - prevLoc) < .001) && (abs(forwBackVel) < 0.05) 
                 forwBackVel = 0;
                 % Change the orientation of the camera
                 yb.rgbdcamera.set_orientation([0 0 pi/4],yb.ref.id);
@@ -128,7 +128,7 @@ while true
             %% Read Data from Range Camera
             pts = yb.rgbdcamera.point_cloud;
             
-             pts = pts(1:3, pts(4, :) < 1);
+            pts = pts(1:3, pts(4, :) < 1); % [x,y,z], pts(4, :) < 1); 4th row elements < 1
 
             if plotData
                 subplot(223)
@@ -228,6 +228,3 @@ while true
     prev_timestep = toc;
     
 end
-
-sim.stopSim();
-sim.delete();

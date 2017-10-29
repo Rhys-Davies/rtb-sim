@@ -3,9 +3,14 @@ classdef sim_diffBot < sim_entity
 %
 % Properties
 %
+%   wheels          %
+%   rgbdcamera      %
 %
 % Methods
 %
+%   setMotorVel     %
+%   getImage        %
+%   getEncoder      %
 %
     
     properties
