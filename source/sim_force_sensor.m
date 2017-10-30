@@ -4,9 +4,9 @@ classdef sim_force_sensor < sim_entity
 %
 % Methods:
 %
-%   torque
-%   state
-%   force
+%   torque          %
+%   state           %
+%   force           %
 %
 
     properties

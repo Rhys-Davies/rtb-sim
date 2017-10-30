@@ -40,21 +40,28 @@ classdef sim_xyz_sensor < sim_entity
             [auxData, dataIndex] = obj.sim.readPointVisionSensor(obj.id);
             
                         
-            % First 15 data entries are min max and average of: Intensity,
+            % First 15 data entries are min, max and average of: Intensity,
             % red, green, blue, and depth. This is the first packet as defined
             % by dataIndex(1). Entries 16 and 17 are image height and width.
             
             w = auxData(dataIndex(1)+1); % Image width (15 + 1)
             h = auxData(dataIndex(1)+2); % Image height (15 + 2)
             
-            % dataIndex(1) + 2 + 1 the start of the sensor output data.
-            % 4 rows, w*h columns
-            % Each colum is x,y,z,dist
-            
-            %auxData(dataIndex(1)+3:end)
+            % dataIndex(1) + 2 + 1 the start of the sensor output data 
+            % (second packet).
+            % This data is in the form:
+            % [x1, y1, z1, dist1, x2, y2, z2, dist2, ... xN, yN, zN, distN]
+            % where N = w*h (pixels).
             
             pts = reshape(auxData((dataIndex(1)+3):end), 4, w*h);
             
+            % 4 rows, w*h columns
+            % The rows represet:
+            % x
+            % y
+            % z
+            % dist
+            % Each column is one point (pixel).
             
         end
         

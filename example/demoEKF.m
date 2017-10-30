@@ -1,4 +1,20 @@
 classdef demoEKF < handle
+
+%% demoEKF
+%
+% Last Modified: October 2017
+%
+% Author: Rhys Davies
+% 
+% This is a rather basic Extended Kalman Filter SLAM class. Assumes perfect
+% data association (each observation is returned with a unique identifier).
+% This could almost be used as a drop in module for a certain subject.
+% Hence I will not be documenting it (if I even leave
+% it in the rtb-sim repo to begin with).
+%
+% If for some reason you wish to use to use/modify/redistribute this code,
+% I have placed in under a MIT License. 
+%
     
     properties
         

@@ -12,9 +12,17 @@ cla
 
 %% Problem parameters
 
+% problem = [ 0, x, y           % Start point (Arena ref frame (MapRef))
+%             1, x, y;          % Rescue point (unknown ref frame)
+%           id1, x, y;          % Landmark 1 (unknown ref frame)
+%           id2, x, y];         % Landmark 2 (unknown ref frame)
+%
+
 init_pos = [.5,.5,0];
-lndmrks_need = [29,38];
-rescue_point = [];
+lndmrks_need = [29, -0.2750, 2.9750;
+                38, 1.2250, -3.6];
+rescue_point = [-3.25,2.1];
+transformed_rescue = [];
 
 %% Initialize Simulation Class
 s = VREP();
@@ -69,8 +77,8 @@ while run
 
         case 'turn'
   
-                odo = turn(db,-deg2rad(45));
-                state = 'translate';
+            odo = turn(db,-deg2rad(45));
+            state = 'translate';
 
         case 'translate'
                 
@@ -89,22 +97,69 @@ while run
                 
         case 'scan' 
             
-            if scan < 720
+            if scan < 360
                 odo = turn(db,-deg2rad(15));
                 scan = scan + 15;
             else
-                state = 'done';
+                state = 'find';
                 odo = [0,0];
             end
             
         case 'find'
             
             % check landmarks against lndmrks_need
-            % get their pos
-            % get transform
-            % find point
-            % Z =
+            if size(lndmrk_id,2) == 5 % Found all five.
+                check1 = find(lndmrk_id == lndmrks_need(1,1)); 
+                check2 = find(lndmrk_id == lndmrks_need(2,1)); 
+            end
             
+            if ~isempty(check1) && ~isempty(check2)
+                
+                m1t = lndmrks_need(1,2:end);
+                m2t = lndmrks_need(2,2:end);
+                
+                a1 = 4 + (2*(check1 - 1));
+                a2 = 4 + (2*(check2 - 1));
+                
+                m1 = mu_t(a1:a1+1);
+                m2 = mu_t(a2:a2+1);
+                
+                trns = getTransform(m1,m2,m1t,m2t);
+                transformed_rescue = transPoint(trns,rescue_point);
+                
+                state = 'turn2rescue';
+                scan = 0;
+                drive = 0;
+                Z = getZ(transformed_rescue(1:2),mu_t(1:3));
+                
+            else
+            
+                state = 'done';
+                disp('Not enough Landmarks found');
+                disp('Rescue aborted');
+                
+            end
+            
+        case 'turn2rescue'
+            
+            odo = turn(db,Z(2));
+            state = 'move2rescue';
+
+        case 'move2rescue'
+
+            if drive > Z(1)
+               state = 'done';
+            else
+               if (Z(1) - drive) < .3
+                   step = Z(1) - drive;
+               else
+                   step = .3;
+               end
+
+               odo = translate(db,step);
+               drive = drive + odo(1);
+            end
+
         case 'done'
             
             disp('Run complete');
@@ -168,6 +223,11 @@ while run
         scatter(mu_t(ln),mu_t(ln+1),col(i))
     end
     
+    if ~isempty(transformed_rescue)
+    
+        scatter(transformed_rescue(1),transformed_rescue(2),'pk');
+    
+    end
     
     hold off
     
@@ -175,6 +235,8 @@ while run
          
 end
 
+s.stopSim();
+s.delete();
 
 end
 
@@ -204,7 +266,7 @@ function trans = getTransform(m1,m2,m1t,m2t)
            Bx1, By1, 0, 1; ...
           -By2, Bx2, 1, 0; ...
            Bx2, By2, 0, 1; ];
-    B = [Ax1, Ay1, Ax2, Ay2];
+    B = [Ax1; Ay1; Ax2; Ay2];
 
     x = linsolve(A,B);
 
@@ -228,7 +290,12 @@ function p = transPoint(trans,point)
          point(2); ...
          1       ];
 
-    p = dot(a,b);
+%     b = [point(1), point(2), 1];
+
+
+%     p = dot(a,b);
+
+      p = a*b;
   
 end
 
@@ -272,9 +339,9 @@ end
 function odo = translate(db,dist)
 
 if dist < 0
-    new = [-deg2rad(100),-deg2rad(100)];    
+    new = [-deg2rad(180),-deg2rad(180)];    
 elseif dist > 0
-    new = [deg2rad(100),deg2rad(100)];
+    new = [deg2rad(180),deg2rad(180)];
 end
 
 
