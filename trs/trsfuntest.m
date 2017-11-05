@@ -49,7 +49,7 @@ if plotData
     Y = reshape(Y, 1, []);
 end
 
-gripperHome = yb.gripper.position(yb.arm_ref.id);
+gripperHome = yb.gripper.position(yb.arm_ref);
 
 % Initialise state machine
 fsm = 'rotate';
@@ -67,19 +67,20 @@ while true
     %% Remove stuff like this: Plotting handled by hokuyo class
     if plotData
         % Read data from the Hokuyo
-           
-        s1 = yb.hokuyo.h1pos;
-        s2 = yb.hokuyo.h2pos;
         
+
+        %s = yb.hokuyol.refer.position
+        %s = yb.hokuyo.hpos
+        s = yb.hokuyo.h1pos;
       
         subplot(211)
 %         plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
 %              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
 %              0, 0, 'ob', s1(1), s1(2), 'or', s2(1), s2(2), 'or');
          
-         plot(pts(1, contacts), pts(2, contacts), '*r',...
-             [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'b',...
-             0, 0, 'og', s1(1), s1(2), 'ob', s2(1), s2(2), 'ob');
+        plot(pts(1, contacts), pts(2, contacts), '*r',...
+             [s(1), pts(1, :), s(1)], [s(2), pts(2, :), s(2)], 'b',...
+             0, 0, 'og', s(1), s(2), 'ob', s(1), s(2), 'or');
          
          
         axis([-5.5, 5.5, -5.5, 2.5]);
@@ -126,7 +127,7 @@ while true
             prevLoc = youbotPos(1);
         case 'snapshot'
             %% Read Data from Range Camera
-            pts = yb.rgbdcamera.point_cloud;
+            pts = yb.get_point_cloud;
             
             pts = pts(1:3, pts(4, :) < 1); % [x,y,z], pts(4, :) < 1); 4th row elements < 1
 
@@ -137,7 +138,7 @@ while true
                 view([-169 -46]);
             end
             
-            image = yb.rgbdcamera.image;
+            image = yb.get_image;
             
             if plotData
                 subplot(224)
@@ -165,7 +166,7 @@ while true
                 fsm = 'reachout';
             end
         case 'reachout'
-            %% TODO    %% Move the gripper tip along a line so that it faces the object with the right angle.
+            %% Move the gripper tip along a line so that it faces the object with the right angle.
             % Get the arm tip position. (It is driven only by this position, except if IK is disabled.)
             
             
@@ -191,15 +192,15 @@ while true
             yb.setkinematicmode(0);
             fsm = 'backoff';
         case 'backoff'
-            %% TODO %% Go back to rest position.
+            %% Go back to rest position.
             % Set each joint to their original angle. 
             yb.arm.set_state(startPose);
             
             % Get the gripper position and check whether it is at destination.
-            tpos = yb.gripper.position(yb.arm_ref.id); % (referenced to 'youBot_ref') 'youBot_gripperPositionTip'
+            tpos = yb.gripper.position(yb.arm_ref.id);
             if norm(tpos - gripperHome) < .02
                 % Open the gripper. 
-                yb.open_gripper; % res = vrep.simxSetIntegerSignal(id, 'gripper_open', 1, vrep.simx_opmode_oneshot_wait);
+                yb.open_gripper; 
             end
             
             if norm(tpos - gripperHome) < .002

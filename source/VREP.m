@@ -1,6 +1,25 @@
 %% VREP Simulator Class
 % NOTE: All VREP API Functions use SI Units!
+% This is a class that wraps the VREP Remote API. It manages the Remote API
+% connection. By default will attempt to connect to '127.0.0.1:19997'
+% (Localhost). 
 %
+% Constructor Arguments.
+%
+%   'IP'                % String that containes IP address of V-REP server. 
+%                         Default is '127.0.0.1'       
+%   'PORT'              % Port number of V-REP server. Default is 19997. 
+%   'timeout'           % Connection timeout in ms. Default is 2000ms
+%   'getter_mode'       % Opmode used by commands that return a reply.
+%                         Default is obj.vrep.simx_opmode_oneshot_wait
+%   'setter_mode'       % Opmode used by commands that do not return a
+%                         reply. Default is obj.vrep.simx_opmode_oneshot
+%   'cycle'             % Cycle time in ms. Default is 5ms
+%   'wait'              % Wait for reconnect. Logical value. Default is true
+%   'reconect'          % Reconnect on error. Logical value. Default is true
+%   'path'              % Optional if API Files are on MATLAB path. This is
+%                         the path to V-REP API files. 
+%            
 % Properties
 %
 %         clientID
@@ -13,57 +32,132 @@
 %         getter_mode
 %         setter_mode
 %         blocking_mode
-
-% 
+%
+%
 % Methods:
-%         
-%     % Generic object management
-%         handle = getHandle(obj_name)
-%         name = getName(obj_handle)
-%         children = getChildren(obj)
-%         pos = getPosition(obj)
-%         pose = getPose(obj)
-%         orint = getOrientation(obj)
-%         status = setPosition(obj,new_pos)
-%         status = setPose(obj,new_pose)
-%         status = setOrientation(obj,new_orint)
-%         
-%      % Joint Specific Methods
-%         pos = getJointPosition(joint)
-%         vel = getJointVelocity(joint)
-%         status = setJointPosition(joint,new_pos)
-%         status = setJointVelocity(joint,new_vel)
-%         
-%      % Sensor Specific Methods
-%         res = getSensorFrame(sensor)
-%         
-%      % Generic simulation management
-%         pauseSim()
-%         startSim()
-%         stopSim()
-%         loadSimWorld(pathTOworld)
-%         loadObject(pathTOobject)
-%         deleteObject(obj)
-%         time = pingSim(id)
-%         
-%      % Signal setters
-%         res = setIntegerSignal(target)
-%         res = setFloatSignal(target)
-%         res = setBooleanSignal(target)
-%         res = setStringSignal(target)
-%         
-%      % Signal getters
-%         sig = getIntegerSignal(target)
-%         sig = getFloatSignal(target)
-%         sig = getBooleanSignal(target)
-%         sig = getStringSignal(target)
 %
+%     Simulator managemet  
+%         
+%     display(obj)              
+%     delete(obj)        
+%     pauseComms(obj,status)            % Pause communication with V-REP     
+%     pauseSim(obj)                     % Pause the simulation
+%     startSim(obj)                     % Start the simulation
+%     stopSim(obj)                      % Stop the simulation
+%     checkcomms(obj)                   % Check communication with V-REP
+%     loadScene(obj,scene,varargin)     % Load a V-REP scene
+%     loadObject(obj,model,varargin)    % Load a model into a V-REP scene    
+%     deleteObject(obj,handle)          % Delete a model from a V-REP scene
+%     closeScene(obj)                   % Close current V-REP scene
+%     pingSim(obj,n)                    % Ping V-REP
 %
-% These are VREP specific methods:
-%         res = setStatusMessage(message) - Not implemented Yet
+%     Generic object management 
 %
+%     getObjects(type)                  % Gets all object. Optionally a
+%                                         type of object can be specified
+%     getHandle(in,varargin)            % Gets the Object ID of a model
+%                                         with a specified name
+%     getName(objhandle)                % Get the name of an object with a
+%                                         specified Object ID
+%     getType(objhandle,str_out)        % Get the type of an object
+%     getChildren(handle)               % Get all the child objects
+%                                         associated to a specified object 
+%     getOrientation(handle,rel2)       % Get the orientation of an object
+%     getPosition(handle,rel2)          % Get the position of an object
+%     setPosition(handle,new,rel2)      % Set the position of an object
+%     setOrientation(handle,orient,rel2)% Set the orientation of an object 
 %
+%     Joint Specific Methods
 %
+%     getJointPosition(handle)          % Gets a joint's postion
+%     getJointMatrix(handle)            % Gets a spherical joint's position
+%     getJointForce(handle)             % Gets the forces acting on a joint    
+%     setJointMatrix(handle,matrix)     % Sets a spherical joint's position
+%     setJointForce(handle,force)       % Sets the forces acting on a joint
+%     setJointPosition(handle,pos)      % Sets a joint's position   
+%     setJointTargetPosition(handle,pos)% Sets a joint's target position    
+%     setJointTargetVelocity(handle,vel)% Sets a joint's target velocity  
+%
+%     Object Parameters
+%
+%     setObjIntParam(handle,param,new)  % Sets an object's integer parameter   
+%     setObjFloatParam(handle,param,new)% Sets an object's float parameter    
+%     getObjIntParam(handle,param)      % Gets an object's integer
+%                                         parameter
+%     getObjFloatParam(handle,param)    % Gets an object's float parameter
+%
+%     Parameter Management
+%
+%     getIntegerParam(param)
+%     getFloatParam(param)              % Gets a float parameter
+%     getBooleanParam(param)            % Gets a boolean parameter
+%     getStringParam(param)             % Gets a string parameter
+%     setIntegerParam(param,new)        % Sets an integer paramter
+%     setFloatParam(param, new)         % Sets a float parameter
+%     setBooleanParam(param, new)       % Sets a boolean parameter
+%     setStringParam(param, new)        % Sets a string parameter
+%
+%     Signal management
+%
+%     getIntegerSignal(signal)          % Gets an integer signal
+%     getFloatSignal(signal)            % Gets a float signal
+%     getBooleanSignal(signal)          % Gets a boolean signal
+%     getStringSignal(signal)           % Gets a string signal
+%     setIntegerSignal(signal,new)      % Sets an integer signal
+%     setFloatSignal(signal,new)        % Sets a float signal
+%     setBooleanSignal(signal,new)      % Sets a boolean signal
+%     setStringSignal(signal,new)       % Sets a string signal
+%     clearIntegerSignal(signal)        % Removes an integer signal from
+%                                         server
+%     clearFloatSignal(signalName)      % Removes a float signal from
+%                                         server
+%     clearBooleanSignal(signalName)    % Removes a boolean signal from
+%                                         server
+%     clearStringSignal(signalName)     % Removes a string signal from
+%                                         server 
+%
+%     Image Sensor Handling
+%
+%     readVisionSensor(handle,grey)     % Gets a RGB or greyscale image
+%                                         from a vision sensor.
+%     readPointVisionSensor(handle)     % Gets raw data packets from a
+%                                         vision sensor.
+%     readVisionSensorDepth(handle)     % Gets a greyscale depth image from
+%                                         a vision sensor.  
+%
+%     Other sensors
+%
+%     readForceSensor(handle)           % Reads a force sensor
+%     readProximitySensor(handle)       % Reads a proximity sensor
+%
+%     Simulation Object Factories.
+%
+%     entity(handle)                    % Creates a sim_entity object
+%     joint(handle)                     % Creates a sim_joint object
+%     sphericalJoint(handle)            % Creates a sim_spherical_joint
+%                                         object
+%     visionSensor(handle)              % Creates a sim_vision_sensor
+%                                         object
+%     camera(handle)                    % Creates a sim_camera object
+%     depthCamera(handle)               % Creates a sim_depth_camera object
+%     xyz_sensor(handle)                % Creates a sim_xyz_sensor object
+%     xy_sensor(handle)                 % Creates a sim_xy_sensor object
+%     rgbdCamera(handle)                % Creates a sim_cameraRGBD object
+%     forceSensor(handle)               % Creates a sim_force_sensor object
+%     proximitySensor(handle)           % Creates a sim_proximity_sensor
+%                                         object
+%     hokuyo(handle,ref)                % Creates a sim_fast_hokuyo object     
+%     arm(base_handle,joint_handle,fmt) % Creates a sim_arm object    
+%     youBot(handle)                    % Creates a sim_youBot object
+%     youBotTRS(handle)                 % Creates a sim_youBot_TRS object
+%     diffBot(handle)                   % Creates a sim_diffBot object
+%
+%     Helpers
+%
+%     armhelper(name, fmt)              % Helper function that discovers
+%                                         all joints that exist in a scene
+%                                         with the specified naming
+%                                         convention.
 %
 %% Opmodes
 %
@@ -141,10 +235,10 @@
 % for a complete list of parameters.
 
         
-classdef VREP < handle %simulator no need to inherit from this
+classdef VREP < handle
     
     properties
-        sim
+        vrep
         PORT
         IP
         clientID
@@ -159,20 +253,11 @@ classdef VREP < handle %simulator no need to inherit from this
         function obj = VREP(varargin)
             
             %vrep = remApi('remoteApi','extApi.h'); % This option requires a compiler
-            obj.sim = remApi('remoteApi');
+            obj.vrep = remApi('remoteApi');
             
-            obj.sim.simxFinish(-1);
+            obj.vrep.simxFinish(-1);
             
             p = inputParser;
-
-            %timeout    Timeout in ms default 2000
-            %cycle      cycle time in ms default is 5
-            %port       default 19997
-            %reconnect  reconnect on error default is false
-            %path       path to vrep remote API files
-            
-            % if path not specified then assume required files are in a
-            % folder already on the MATLAB path.
             
             %% input parsing
             defaultIP = '127.0.0.1';
@@ -182,8 +267,8 @@ classdef VREP < handle %simulator no need to inherit from this
             defaultwaitforconnect = true;
             defaultreconnect = true;
             defaultpath = getenv('VREP');
-            defaultgettermode = obj.sim.simx_opmode_oneshot_wait;
-            defaultsettermode = obj.sim.simx_opmode_oneshot;
+            defaultgettermode = obj.vrep.simx_opmode_oneshot_wait;
+            defaultsettermode = obj.vrep.simx_opmode_oneshot;
             
             addOptional(p,'IP',defaultIP,@isstring);
             addOptional(p,'PORT',defaultPORT,@isnumeric);
@@ -197,7 +282,7 @@ classdef VREP < handle %simulator no need to inherit from this
             
             parse(p,varargin{:});
             
-            obj.blocking_mode = obj.sim.simx_opmode_blocking;
+            obj.blocking_mode = obj.vrep.simx_opmode_blocking;
             obj.getter_mode = p.Results.getter_mode;
             obj.setter_mode = p.Results.setter_mode;
             
@@ -257,7 +342,7 @@ classdef VREP < handle %simulator no need to inherit from this
             
             % Initialize the simulator.
             
-            obj.clientID = obj.sim.simxStart(obj.IP,obj.PORT,p.Results.wait, ...
+            obj.clientID = obj.vrep.simxStart(obj.IP,obj.PORT,p.Results.wait, ...
                 p.Results.reconnect,p.Results.timeout,p.Results.cycle);
             
             if obj.clientID < 0
@@ -301,35 +386,35 @@ classdef VREP < handle %simulator no need to inherit from this
             s = strvcat(s, sprintf('path: %s ', obj.path));
             
             switch obj.getter_mode
-                case obj.sim.simx_opmode_oneshot
+                case obj.vrep.simx_opmode_oneshot
                     s = strvcat(s, 'Getter mode: simx_opmode_oneshot (non-blocking)');
-                case obj.sim.simx_opmode_oneshot_wait
+                case obj.vrep.simx_opmode_oneshot_wait
                     s = strvcat(s, 'Getter mode: simx_opmode_oneshot_wait (blocking)');
-                case obj.sim.simx_opmode_streaming
+                case obj.vrep.simx_opmode_streaming
                     s = strvcat(s, 'Getter mode: simx_opmode_streaming (non-blocking)');
-                case obj.sim.simx_opmode_buffer
+                case obj.vrep.simx_opmode_buffer
                     s = strvcat(s, 'Getter mode: simx_opmode_buffer (non-blocking)');
             end
             
             switch obj.setter_mode
-                case obj.sim.simx_opmode_oneshot
+                case obj.vrep.simx_opmode_oneshot
                     s = strvcat(s, 'Setter mode: simx_opmode_oneshot (non-blocking)');
-                case obj.sim.simx_opmode_oneshot_wait
+                case obj.vrep.simx_opmode_oneshot_wait
                     s = strvcat(s, 'Setter mode: simx_opmode_oneshot_wait (blocking)');
-                case obj.sim.simx_opmode_streaming
+                case obj.vrep.simx_opmode_streaming
                     s = strvcat(s, 'Setter mode: simx_opmode_streaming (non-blocking)');
-                case obj.sim.simx_opmode_buffer
+                case obj.vrep.simx_opmode_buffer
                     s = strvcat(s, 'Setter mode: simx_opmode_buffer (non-blocking)');
             end
             
             switch obj.blocking_mode
-                case obj.sim.simx_opmode_oneshot
+                case obj.vrep.simx_opmode_oneshot
                     s = strvcat(s, 'Blocking mode: simx_opmode_oneshot (non-blocking)');
-                case obj.sim.simx_opmode_oneshot_wait
+                case obj.vrep.simx_opmode_oneshot_wait
                     s = strvcat(s, 'Blocking mode: simx_opmode_oneshot_wait (blocking)');
-                case obj.sim.simx_opmode_streaming
+                case obj.vrep.simx_opmode_streaming
                     s = strvcat(s, 'Blocking mode: simx_opmode_streaming (non-blocking)');
-                case obj.sim.simx_opmode_buffer
+                case obj.vrep.simx_opmode_buffer
                     s = strvcat(s, 'Blocking mode: simx_opmode_buffer (non-blocking)');
             end 
 
@@ -343,9 +428,9 @@ classdef VREP < handle %simulator no need to inherit from this
         % Destroy the simulator object and cleanup. 
         %
 
-            obj.sim.simxFinish(obj.clientID);
-            obj.sim.simxFinish(-1);
-            obj.sim.delete();
+            obj.vrep.simxFinish(obj.clientID);
+            obj.vrep.simxFinish(-1);
+            obj.vrep.delete();
            
         end
         
@@ -364,7 +449,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   status            % 1 or true to pause, 0 or false to resume
         %
 
-            r = obj.sim.simxPauseCommunication(obj.clientID,status);
+            r = obj.vrep.simxPauseCommunication(obj.clientID,status);
             
             
            if r ~= 0 && r ~= 1
@@ -379,7 +464,7 @@ classdef VREP < handle %simulator no need to inherit from this
         % Pauses the current simulation.
         %
             
-            r = obj.sim.simxPauseSimulation(obj.clientID,obj.setter_mode);
+            r = obj.vrep.simxPauseSimulation(obj.clientID,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -394,7 +479,7 @@ classdef VREP < handle %simulator no need to inherit from this
         % are called.
         %
             
-            r = obj.sim.simxStartSimulation(obj.clientID,obj.setter_mode);
+            r = obj.vrep.simxStartSimulation(obj.clientID,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -409,7 +494,7 @@ classdef VREP < handle %simulator no need to inherit from this
         % the state it was in before VREP.startSim was called.
         %
             
-            r = obj.sim.simxStopSimulation(obj.clientID,obj.setter_mode);
+            r = obj.vrep.simxStopSimulation(obj.clientID,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -424,7 +509,7 @@ classdef VREP < handle %simulator no need to inherit from this
         % Retruns the VREP connection ID if a valid connection exists.
         %
             
-            r = obj.sim.simxGetConnectionId(obj.clientID);
+            r = obj.vrep.simxGetConnectionId(obj.clientID);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -473,7 +558,7 @@ classdef VREP < handle %simulator no need to inherit from this
             
             obj.stopSim();
             
-            r = obj.sim.simxLoadScene(obj.clientID,scene,b,obj.blocking_mode);
+            r = obj.vrep.simxLoadScene(obj.clientID,scene,b,obj.blocking_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -523,7 +608,7 @@ classdef VREP < handle %simulator no need to inherit from this
                    
            end
             
-            [r,id] = obj.sim.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
+            [r,id] = obj.vrep.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -549,7 +634,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   handle      % A VREP object ID
         %
             
-            r = obj.sim.simxRemoveModel(obj.clientID,handle,obj.setter_mode);
+            r = obj.vrep.simxRemoveModel(obj.clientID,handle,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -566,7 +651,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
             
             obj.stopSim();
-            r = obj.sim.simxCloseScene(obj.clientID,obj.setter_mode);
+            r = obj.vrep.simxCloseScene(obj.clientID,obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -594,7 +679,7 @@ classdef VREP < handle %simulator no need to inherit from this
             temp = [];
             
             for i = 0:n
-                [r,temp(n)] = obj.sim.simxGetPingTime(obj.clientID);
+                [r,temp(n)] = obj.vrep.simxGetPingTime(obj.clientID);
                 
                if r ~= 0 && r ~= 1
                     throw(obj.errcheck(r))
@@ -665,73 +750,73 @@ classdef VREP < handle %simulator no need to inherit from this
         
             
             if nargin < 2
-                stype = obj.sim.sim_appobj_object_type;
+                stype = obj.vrep.sim_appobj_object_type;
             else
                 switch (type)
                     case 'shape'
-                        stype = obj.sim.sim_object_shape_type;
+                        stype = obj.vrep.sim_object_shape_type;
                     case 'joint'
-                        stype = obj.sim.sim_object_joint_type;
+                        stype = obj.vrep.sim_object_joint_type;
                     case 'graph'
-                        stype = obj.sim.sim_object_graph_type;
+                        stype = obj.vrep.sim_object_graph_type;
                     case 'camera'
-                        stype = obj.sim.sim_object_camera_type;
+                        stype = obj.vrep.sim_object_camera_type;
                     case 'light'
-                        stype = obj.sim.sim_object_light_type;
+                        stype = obj.vrep.sim_object_light_type;
                     case 'dummy'
-                        stype = obj.sim.sim_object_dummy_type;
+                        stype = obj.vrep.sim_object_dummy_type;
                     case 'proximity_sensor'
-                        stype = obj.sim.sim_object_proximitysensor_type;
+                        stype = obj.vrep.sim_object_proximitysensor_type;
                     case 'path'
-                        stype = obj.sim.sim_object_path_type;
+                        stype = obj.vrep.sim_object_path_type;
                     case 'vision_sensor'
-                        stype = obj.sim.sim_object_visionsensor_type;
+                        stype = obj.vrep.sim_object_visionsensor_type;
                     case 'mill'
-                        stype = obj.sim.sim_object_mill_type;
+                        stype = obj.vrep.sim_object_mill_type;
                     case 'force_sensor'
-                        stype = obj.sim.sim_object_forcesensor_type;
+                        stype = obj.vrep.sim_object_forcesensor_type;
                     case 'mirror'
-                        stype = obj.sim.sim_object_mirror_type;
+                        stype = obj.vrep.sim_object_mirror_type;
                     case 'omni_light'
-                        stype = obj.sim.sim_light_omnidirectional_subtype;
+                        stype = obj.vrep.sim_light_omnidirectional_subtype;
                     case 'spot_light'
-                        stype = obj.sim.sim_light_spot_subtype;
+                        stype = obj.vrep.sim_light_spot_subtype;
                     case 'directional_light'
-                        stype = obj.sim.sim_light_directional_subtype;
+                        stype = obj.vrep.sim_light_directional_subtype;
                     case 'revolute_joint'
-                        stype = obj.sim.sim_joint_revolute_subtype;
+                        stype = obj.vrep.sim_joint_revolute_subtype;
                     case 'prismatic_joint'
-                        stype = obj.sim.sim_joint_prismatic_subtype;
+                        stype = obj.vrep.sim_joint_prismatic_subtype;
                     case 'spherical_joint'
-                        stype = obj.sim.sim_joint_spherical_subtype;
+                        stype = obj.vrep.sim_joint_spherical_subtype;
                     case 'simple_shape'
-                        stype = obj.sim.sim_shape_simpleshape_subtype;
+                        stype = obj.vrep.sim_shape_simpleshape_subtype;
                     case 'multi_shape'
-                        stype = obj.sim.sim_shape_multishape_subtype;
+                        stype = obj.vrep.sim_shape_multishape_subtype;
                     case 'ray_proximity_sensor'
-                        stype = obj.sim.sim_proximitysensor_ray_subtype;
+                        stype = obj.vrep.sim_proximitysensor_ray_subtype;
                     case 'pyramid_proximity_sensor'
-                        stype = obj.sim.sim_proximitysensor_pyramid_subtype;
+                        stype = obj.vrep.sim_proximitysensor_pyramid_subtype;
                     case 'cylinder_proximity_sensor'
-                        stype = obj.sim.sim_proximitysensor_cylinder_subtype;
+                        stype = obj.vrep.sim_proximitysensor_cylinder_subtype;
                     case 'disc_proximity_sensor'
-                        stype = obj.sim.sim_proximitysensor_disc_subtype;
+                        stype = obj.vrep.sim_proximitysensor_disc_subtype;
                     case 'cone_proximity_sensor'
-                        stype = obj.sim.sim_proximitysensor_cone_subtype;
+                        stype = obj.vrep.sim_proximitysensor_cone_subtype;
                     case 'pyramid_mill'
-                        stype = obj.sim.sim_mill_pyramid_subtype;
+                        stype = obj.vrep.sim_mill_pyramid_subtype;
                     case 'cylinder_mill'
-                        stype = obj.sim.sim_mill_cylinder_subtype;
+                        stype = obj.vrep.sim_mill_cylinder_subtype;
                     case 'disc_mill'
-                        stype = obj.sim.sim_mill_disc_subtype;
+                        stype = obj.vrep.sim_mill_disc_subtype;
                     case 'cone_mill'
-                        stype = obj.sim.sim_mill_cone_subtype;
+                        stype = obj.vrep.sim_mill_cone_subtype;
                     otherwise
                         error("VREP.getObjects: An invalid/unknown type was specified! (Type: %d)",types);
                 end
             end
 
-            [r,objid,~,~,name] = obj.sim.simxGetObjectGroupData(obj.clientID, stype, 0, obj.blocking_mode);
+            [r,objid,~,~,name] = obj.vrep.simxGetObjectGroupData(obj.clientID, stype, 0, obj.blocking_mode);
 
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -766,7 +851,7 @@ classdef VREP < handle %simulator no need to inherit from this
                 name = sprintf(in, varargin{:});
             end
             
-            [r,handle] = obj.sim.simxGetObjectHandle(obj.clientID,name,obj.blocking_mode);
+            [r,handle] = obj.vrep.simxGetObjectHandle(obj.clientID,name,obj.blocking_mode);
         
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -790,7 +875,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
             
             
-            [r,objid,~,~,str] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 0, obj.blocking_mode);
+            [r,objid,~,~,str] = obj.vrep.simxGetObjectGroupData(obj.clientID, obj.vrep.sim_appobj_object_type, 0, obj.blocking_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -871,7 +956,7 @@ classdef VREP < handle %simulator no need to inherit from this
             end
             
         
-            [r,objid,types,~,~] = obj.sim.simxGetObjectGroupData(obj.clientID, obj.sim.sim_appobj_object_type, 1, obj.blocking_mode);
+            [r,objid,types,~,~] = obj.vrep.simxGetObjectGroupData(obj.clientID, obj.vrep.sim_appobj_object_type, 1, obj.blocking_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -882,63 +967,63 @@ classdef VREP < handle %simulator no need to inherit from this
             if str_out
             
                 switch (types)
-                    case obj.sim.sim_object_shape_type
+                    case obj.vrep.sim_object_shape_type
                         stype = 'shape';
-                    case obj.sim.sim_object_joint_type
+                    case obj.vrep.sim_object_joint_type
                         stype = 'joint';
-                    case obj.sim.sim_object_graph_type
+                    case obj.vrep.sim_object_graph_type
                         stype = 'graph';
-                    case obj.sim.sim_object_camera_type
+                    case obj.vrep.sim_object_camera_type
                         stype = 'camera';
-                    case obj.sim.sim_object_light_type
+                    case obj.vrep.sim_object_light_type
                         stype = 'light';
-                    case obj.sim.sim_object_dummy_type
+                    case obj.vrep.sim_object_dummy_type
                         stype = 'dummy';
-                    case obj.sim.sim_object_proximitysensor_type
+                    case obj.vrep.sim_object_proximitysensor_type
                         stype = 'proximity_sensor';
-                    case obj.sim.sim_object_path_type
+                    case obj.vrep.sim_object_path_type
                         stype = 'path';
-                    case obj.sim.sim_object_visionsensor_type
+                    case obj.vrep.sim_object_visionsensor_type
                         stype = 'vision_sensor';
-                    case obj.sim.sim_object_mill_type
+                    case obj.vrep.sim_object_mill_type
                         stype = 'mill';
-                    case obj.sim.sim_object_forcesensor_type
+                    case obj.vrep.sim_object_forcesensor_type
                         stype = 'force_sensor';
-                    case obj.sim.sim_object_mirror_type
+                    case obj.vrep.sim_object_mirror_type
                         stype = 'mirror';
-                    case obj.sim.sim_light_omnidirectional_subtype
+                    case obj.vrep.sim_light_omnidirectional_subtype
                         stype = 'omni_light';
-                    case obj.sim.sim_light_spot_subtype
+                    case obj.vrep.sim_light_spot_subtype
                         stype = 'spot_light';
-                    case obj.sim.sim_light_directional_subtype
+                    case obj.vrep.sim_light_directional_subtype
                         stype = 'directional_light';
-                    case obj.sim.sim_joint_revolute_subtype
+                    case obj.vrep.sim_joint_revolute_subtype
                         stype = 'revolute_joint';
-                    case obj.sim.sim_joint_prismatic_subtype
+                    case obj.vrep.sim_joint_prismatic_subtype
                         stype = 'prismatic_joint';
-                    case obj.sim.sim_joint_spherical_subtype
+                    case obj.vrep.sim_joint_spherical_subtype
                         stype = 'spherical_joint';
-                    case obj.sim.sim_shape_simpleshape_subtype
+                    case obj.vrep.sim_shape_simpleshape_subtype
                         stype = 'simple_shape';
-                    case obj.sim.sim_shape_multishape_subtype
+                    case obj.vrep.sim_shape_multishape_subtype
                         stype = 'multi_shape';
-                    case obj.sim.sim_proximitysensor_ray_subtype
+                    case obj.vrep.sim_proximitysensor_ray_subtype
                         stype = 'ray_proximity_sensor';
-                    case obj.sim.sim_proximitysensor_pyramid_subtype
+                    case obj.vrep.sim_proximitysensor_pyramid_subtype
                         stype = 'pyramid_proximity_sensor';
-                    case obj.sim.sim_proximitysensor_cylinder_subtype
+                    case obj.vrep.sim_proximitysensor_cylinder_subtype
                         stype = 'cylinder_proximity_sensor';
-                    case obj.sim.sim_proximitysensor_disc_subtype
+                    case obj.vrep.sim_proximitysensor_disc_subtype
                         stype = 'disc_proximity_sensor';
-                    case obj.sim.sim_proximitysensor_cone_subtype
+                    case obj.vrep.sim_proximitysensor_cone_subtype
                         stype = 'cone_proximity_sensor';
-                    case obj.sim.sim_mill_pyramid_subtype
+                    case obj.vrep.sim_mill_pyramid_subtype
                         stype = 'pyramid_mill';
-                    case obj.sim.sim_mill_cylinder_subtype
+                    case obj.vrep.sim_mill_cylinder_subtype
                         stype = 'cylinder_mill';
-                    case obj.sim.sim_mill_disc_subtype
+                    case obj.vrep.sim_mill_disc_subtype
                         stype = 'disc_mill';
-                    case obj.sim.sim_mill_cone_subtype
+                    case obj.vrep.sim_mill_cone_subtype
                         stype = 'cone_mill';
                     otherwise
                         error("VREP.getType: Object is an unknown type! (Type: %d)",types);
@@ -970,7 +1055,7 @@ classdef VREP < handle %simulator no need to inherit from this
             i = 0;
             while true
                 
-                [r,child] = obj.sim.simxGetObjectChild(obj.clientID, handle, i, obj.blocking_mode);
+                [r,child] = obj.vrep.simxGetObjectChild(obj.clientID, handle, i, obj.blocking_mode);
             	
                 if child < 0
                     break
@@ -1015,7 +1100,7 @@ classdef VREP < handle %simulator no need to inherit from this
             
             opmode = obj.getter_mode;
             
-            [r,orient] = obj.sim.simxGetObjectOrientation(obj.clientID,handle,rel2,opmode); 
+            [r,orient] = obj.vrep.simxGetObjectOrientation(obj.clientID,handle,rel2,opmode); 
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1050,7 +1135,7 @@ classdef VREP < handle %simulator no need to inherit from this
         
             opmode = obj.getter_mode;
             
-            [r,pos] = obj.sim.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
+            [r,pos] = obj.vrep.simxGetObjectPosition(obj.clientID,handle,rel2,opmode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1079,7 +1164,7 @@ classdef VREP < handle %simulator no need to inherit from this
                 rel2 = -1;
             end
             
-            r = obj.sim.simxSetObjectPosition(obj.clientID,handle,rel2,new,obj.setter_mode);
+            r = obj.vrep.simxSetObjectPosition(obj.clientID,handle,rel2,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1113,7 +1198,7 @@ classdef VREP < handle %simulator no need to inherit from this
                 rel2 = -1;
             end
                 
-            r = obj.sim.simxSetObjectOrientation(obj.clientID,handle,rel2,orient,obj.setter_mode);
+            r = obj.vrep.simxSetObjectOrientation(obj.clientID,handle,rel2,orient,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1140,7 +1225,7 @@ classdef VREP < handle %simulator no need to inherit from this
         
             opmode = obj.getter_mode;
         
-            [r,pos] = obj.sim.simxGetJointPosition(obj.clientID,handle,opmode);
+            [r,pos] = obj.vrep.simxGetJointPosition(obj.clientID,handle,opmode);
 
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1168,7 +1253,7 @@ classdef VREP < handle %simulator no need to inherit from this
         
             opmode = obj.getter_mode;
         
-            [r,matrix] = obj.sim.simxGetJointMatrix(obj.clientID,handle,opmode);
+            [r,matrix] = obj.vrep.simxGetJointMatrix(obj.clientID,handle,opmode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1203,7 +1288,7 @@ classdef VREP < handle %simulator no need to inherit from this
         
             opmode = obj.getter_mode;
         
-            [r,force] = obj.sim.simxGetJointForce(obj.clientID,handle,opmode);
+            [r,force] = obj.vrep.simxGetJointForce(obj.clientID,handle,opmode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1211,8 +1296,8 @@ classdef VREP < handle %simulator no need to inherit from this
             
         end
           
-        function setSphericalJointMatrix(obj,handle,matrix)
-        % VREP.setSphericalJointMatrix
+        function setJointMatrix(obj,handle,matrix)
+        % VREP.setJointMatrix
         %
         % Sets the position of a spherical joint. This method has no effect
         % on other joint types.
@@ -1224,7 +1309,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
 
         
-            r = obj.sim.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.setter_mode);
+            r = obj.vrep.simxSetSphericalJointMatrix(obj.clientID,handle,matrix,obj.setter_mode);
                       
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1246,7 +1331,7 @@ classdef VREP < handle %simulator no need to inherit from this
         % 
         
         
-            r = obj.sim.simxSetJointForce(obj.clientID,handle,force,obj.setter_mode);
+            r = obj.vrep.simxSetJointForce(obj.clientID,handle,force,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1269,7 +1354,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
         
         
-            r = obj.sim.simxSetJointPosition(obj.clientID,handle,pos,obj.setter_mode);
+            r = obj.vrep.simxSetJointPosition(obj.clientID,handle,pos,obj.setter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1291,7 +1376,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   pos         % An angular position in Radians.
         %
         
-            r = obj.sim.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.setter_mode);
+            r = obj.vrep.simxSetJointTargetPosition(obj.clientID,handle,pos,obj.setter_mode);
 
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1312,7 +1397,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   vel         % An angular velocity in Radians/sec
         %
         
-            r = obj.sim.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.setter_mode);
+            r = obj.vrep.simxSetJointTargetVelocity(obj.clientID,handle,vel,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1335,7 +1420,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new value. Must be an integer.
         %
             
-            r = obj.sim.simxSetObjectIntParameter(obj.clientID, handle, param, new, obj.setter_mode);
+            r = obj.vrep.simxSetObjectIntParameter(obj.clientID, handle, param, new, obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1357,7 +1442,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new value. Must be a float.
         %    
         
-            r = obj.sim.simxSetObjectFloatParameter(obj.clientID,handle,param, new, obj.setter_mode);
+            r = obj.vrep.simxSetObjectFloatParameter(obj.clientID,handle,param, new, obj.setter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1382,7 +1467,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res        % The value of the parameter.
         %
             
-            [r, res] = obj.sim.simxGetObjectIntParameter(obj.clientID,handle,param,obj.getter_mode);
+            [r, res] = obj.vrep.simxGetObjectIntParameter(obj.clientID,handle,param,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1407,7 +1492,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res        % The value of the parameter.
         %
             
-            [r, param] = obj.sim.simxGetObjectFloatParameter(obj.clientID,handle,param,obj.getter_mode);
+            [r, param] = obj.vrep.simxGetObjectFloatParameter(obj.clientID,handle,param,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1433,7 +1518,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res        % The value of the parameter.
         %
             
-            [r,res] = obj.sim.simxGetIntegerParameter(obj.clientID,param,obj.getter_mode);
+            [r,res] = obj.vrep.simxGetIntegerParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1457,7 +1542,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res        % The value of the parameter.
         %
             
-            [r,res] = obj.sim.simxGetFloatingParameter(obj.clientID,param,obj.getter_mode);
+            [r,res] = obj.vrep.simxGetFloatingParameter(obj.clientID,param,obj.getter_mode);
           
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1481,7 +1566,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res        % The value of the parameter.
         %
             
-            [r,res] = obj.sim.simxGetBooleanParameter(obj.clientID,param,obj.getter_mode);
+            [r,res] = obj.vrep.simxGetBooleanParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1504,7 +1589,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
         %   res        % The value of the parameter.
         %
-            [r,res] = obj.sim.simxGetStringParameter(obj.clientID,param,obj.getter_mode);
+            [r,res] = obj.vrep.simxGetStringParameter(obj.clientID,param,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1524,7 +1609,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % New value. Must be an integer.
         %
             
-            r = obj.sim.simxGetIntegerParameter(obj.clientID,param,new,obj.setter_mode);
+            r = obj.vrep.simxGetIntegerParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1544,7 +1629,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % New value. Must be a float.
         %
             
-            r = obj.sim.simxGetFloatParameter(obj.clientID,param,new,obj.setter_mode);
+            r = obj.vrep.simxGetFloatParameter(obj.clientID,param,new,obj.setter_mode);
           
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1564,7 +1649,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % New value. Must be boolean/logical.
         %
             
-            r = obj.sim.simxGetBooleanParameter(obj.clientID,param,new,obj.setter_mode);
+            r = obj.vrep.simxGetBooleanParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1584,7 +1669,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % New value. Must be a string.
         %
             
-            r = obj.sim.simxGetStringParameter(obj.clientID,param,new,obj.setter_mode);
+            r = obj.vrep.simxGetStringParameter(obj.clientID,param,new,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1611,7 +1696,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res         % The contents of the signal.
         %
             
-            [r,res] = obj.sim.simxGetIntegerSignal(obj.clientID,signal,obj.getter_mode);
+            [r,res] = obj.vrep.simxGetIntegerSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1633,7 +1718,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res         % The contents of the signal.
         %    
             
-            [r,sig] = obj.sim.simxGetFloatSignal(obj.clientID,signal,obj.getter_mode);
+            [r,sig] = obj.vrep.simxGetFloatSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1655,7 +1740,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res         % The contents of the signal.
         %    
                 
-            [r,sig] = obj.sim.simxGetBooleanSignal(obj.clientID,signal,obj.getter_mode);
+            [r,sig] = obj.vrep.simxGetBooleanSignal(obj.clientID,signal,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1677,7 +1762,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   res         % The contents of the signal.
         %        
         
-            [r,sig] = obj.sim.simxGetStringSignal(obj.clientID,signal,obj.getter_mode);
+            [r,sig] = obj.vrep.simxGetStringSignal(obj.clientID,signal,obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1698,7 +1783,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new signal value, this must be an Integer.
         %    
             
-            r = obj.sim.simxSetIntegerSignal(obj.clientID,signal,new,obj.getter_mode);
+            r = obj.vrep.simxSetIntegerSignal(obj.clientID,signal,new,obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1719,7 +1804,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new signal value, this must be a Float.
         %    
             
-            r = obj.sim.simxSetFloatSignal(obj.clientID,signal,new,obj.getter_mode);
+            r = obj.vrep.simxSetFloatSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1740,7 +1825,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new signal value, this must be a Boolean.
         %      
         
-            r = obj.sim.simxSetBooleanSignal(obj.clientID,signal,new,obj.getter_mode);
+            r = obj.vrep.simxSetBooleanSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1761,7 +1846,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   new         % The new signal value, this must be a String.
         % 
             
-            r = obj.sim.simxSetStringSignal(obj.clientID,signal,new,obj.getter_mode);
+            r = obj.vrep.simxSetStringSignal(obj.clientID,signal,new,obj.getter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1780,7 +1865,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   signal      % A string identifying the desired signal.
         %
             
-            r = obj.sim.simxClearIntegerSignal(obj.clientID,signal,obj.setter_mode);
+            r = obj.vrep.simxClearIntegerSignal(obj.clientID,signal,obj.setter_mode);
            
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1799,7 +1884,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   signal      % A string identifying the desired signal.
         %
                
-            r = obj.sim.simxClearFloatSignal(obj.clientID,signalName,obj.setter_mode);
+            r = obj.vrep.simxClearFloatSignal(obj.clientID,signalName,obj.setter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1818,7 +1903,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   signal      % A string identifying the desired signal.
         %
             
-            r = obj.sim.simxClearBooleanSignal(obj.clientID,signalName,obj.setter_mode);
+            r = obj.vrep.simxClearBooleanSignal(obj.clientID,signalName,obj.setter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1837,7 +1922,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   signal      % A string identifying the desired signal.
         %
             
-            r = obj.sim.simxClearStringSignal(obj.clientID,signalName,obj.setter_mode);
+            r = obj.vrep.simxClearStringSignal(obj.clientID,signalName,obj.setter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1856,8 +1941,8 @@ classdef VREP < handle %simulator no need to inherit from this
 %         sim_visionintparam_resolution_x (1002): int32 parameter : resolution x
 %         sim_visionintparam_resolution_y (1003): int32 parameter : resolution y
 %         sim_visionfloatparam_perspective_angle (1004): float parameter : perspective projection angle
-%         [r,msg] = obj.sim.simxGetFloatParameter(onj.clientID,target,obj.mode);
-%         [r,msg] = obj.sim.simxGetIntegerParameter(obj.clientID,target,obj.mode);
+%         [r,msg] = obj.vrep.simxGetFloatParameter(onj.clientID,target,obj.mode);
+%         [r,msg] = obj.vrep.simxGetIntegerParameter(obj.clientID,target,obj.mode);
         
         
 
@@ -1887,7 +1972,7 @@ classdef VREP < handle %simulator no need to inherit from this
                 grey = false;
             end
             
-            [r,~,img] = obj.sim.simxGetVisionSensorImage2(obj.clientID,handle,grey,obj.getter_mode);
+            [r,~,img] = obj.vrep.simxGetVisionSensorImage2(obj.clientID,handle,grey,obj.getter_mode);
 
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1914,7 +1999,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %                     auxData.
         %
             
-            [r, ~, auxData, dataIndex] = obj.sim.simxReadVisionSensor(obj.clientID, handle, obj.getter_mode);
+            [r, ~, auxData, dataIndex] = obj.vrep.simxReadVisionSensor(obj.clientID, handle, obj.getter_mode);
         
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1937,7 +2022,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   img         % An image matrix
         %
             
-            [r,~,img] = obj.sim.simxGetVisionSensorDepthBuffer2(obj.clientID,handle,obj.getter_mode);
+            [r,~,img] = obj.vrep.simxGetVisionSensorDepthBuffer2(obj.clientID,handle,obj.getter_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1970,7 +2055,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %   force       % Force acting on the sensor in Newtons.
         %
             
-           [r,state,torque,force] = obj.sim.simxReadForceSensor(obj.clientID,handle,obj.getter_mode);
+           [r,state,torque,force] = obj.vrep.simxReadForceSensor(obj.clientID,handle,obj.getter_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -1997,7 +2082,7 @@ classdef VREP < handle %simulator no need to inherit from this
         %
           
      
-           [r,state,point,~,~] = obj.sim.simxReadProximitySensor(obj.clientID,handle,obj.getter_mode); % [r,state,point,found_obj,found_surface] 
+           [r,state,point,~,~] = obj.vrep.simxReadProximitySensor(obj.clientID,handle,obj.getter_mode); % [r,state,point,found_obj,found_surface] 
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -2011,7 +2096,7 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = entity(obj,handle)
         % VREP.entity
         %
-        % Generates an entity object from either an object name or object
+        % Generates a sim_entity object from either an object name or object
         % ID.
         %
         % Arguments:
@@ -2030,7 +2115,7 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = joint(obj,handle)
         % VREP.joint
         %
-        % Generates an joint object from either an object name or object
+        % Generates a sim_joint object from either an object name or object
         % ID.
         %
         % Arguments:
@@ -2045,11 +2130,49 @@ classdef VREP < handle %simulator no need to inherit from this
             out = sim_joint(obj,handle);
             
         end
-                
-        function out = rgb_sensor(obj,handle)
-        % VREP.rgb_sensor
+        
+        function out = sphericalJoint(obj,handle)
+        % VREP.sphericalJoint
         %
-        % Generates a rgb sensor object from either an object name or object
+        % Generates a sim_spherical_joint object from either an object name 
+        % or object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A spherical joint object. 
+        %
+            
+            out = sim_spherical_joint(obj,handle);
+            
+        end
+        
+        function out = visionSensor(obj,handle)
+        % VREP.visionSensor
+        %
+        % Generates a sim_vision_sensor object from either an object name 
+        % or object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A vision sensor object. 
+        %
+            
+            out = sim_vision_sensor(obj,handle);
+         
+        end
+                
+        function out = camera(obj,handle)
+        % VREP.camera
+        %
+        % Generates a sim_camera object from either an object name or object
         % ID.
         %
         % Arguments:
@@ -2061,15 +2184,34 @@ classdef VREP < handle %simulator no need to inherit from this
         %   out          % A rgb sensor object. 
         %
             
-            out = sim_rgb_sensor(obj,handle);
+            out = sim_camera(obj,handle);
+            
+        end
+        
+        function out = depthCamera(obj,handle)
+        % VREP.depthCamera
+        %
+        % Generates a sim_depth_camera object from either an object name or
+        % object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A rgb sensor object. 
+        %
+            
+            out = sim_camera(obj,handle);
             
         end
         
         function out = xyz_sensor(obj,handle)
         % VREP.xyz_sensor
         %
-        % Generates a XYZ sensor object from either an object name or object
-        % ID.
+        % Generates a sim_xyz_sensor object from either an object name or 
+        % object ID.
         %
         % Arguments:
         %
@@ -2087,8 +2229,8 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = xy_sensor(obj,handle)
         % VREP.xy_sensor
         % 
-        % Generates a XY sensor object from either an object name or object
-        % ID.
+        % Generates a sim_xy_sensor object from either an object name or 
+        % object ID.
         %
         % Arguments:
         %
@@ -2105,8 +2247,8 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = rgbdCamera(obj,handle)
         % VREP.rgbdCamera
         %
-        % Generates a RGBD camera object from either an object name or object
-        % ID.
+        % Generates a sim_cameraRGBD object from either an object name or
+        % object ID.
         %
         % Arguments:
         %
@@ -2121,10 +2263,11 @@ classdef VREP < handle %simulator no need to inherit from this
         
         end
         
+        
         function out = forceSensor(obj,handle)
         % VREP.forceSensor
         %
-        % Generates a force sensor object from either an object name or 
+        % Generates a sim_force_sensor object from either an object name or 
         % object ID.
         %
         % Arguments:
@@ -2140,10 +2283,30 @@ classdef VREP < handle %simulator no need to inherit from this
             
         end
         
+        
+        function out = proximitySensor(obj,handle)
+        % VREP.proximitySensor
+        %
+        % Generates a sim_proximity_sensor object from either an object 
+        % name or object ID.
+        %
+        % Arguments:
+        %
+        %   handle       % A string name or VREP object ID. 
+        %
+        % Returns:
+        %
+        %   out          % A force sensor object. 
+        %
+            
+           out = sim_proximity_sensor(obj,handle);
+            
+        end
+        
         function out = hokuyo(obj,handle,ref)
         % VREP.hokuyo
         %    
-        % Generates a Fast Hokuyo object from either an object name or 
+        % Generates a sim_fast_hokuyo object from either an object name or 
         % object ID.
         %
         % Arguments:
@@ -2167,7 +2330,7 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = arm(obj,base_handle,joint_handle,fmt)
         % VREP.arm
         %
-        % Generates an Arm object from either an object name or 
+        % Generates a sim_arm object from either an object name or 
         % object ID.
         %
         % Arguments:
@@ -2178,20 +2341,15 @@ classdef VREP < handle %simulator no need to inherit from this
         %
         %   out          % An arm object. 
         %
-            if nargin < 4
-                [list,num] = obj.armhelper(joint_handle);
-            else
-                [list,num] = obj.armhelper(joint_handle,fmt);
-            end
-            
-             out = sim_arm(obj, base_handle, list, num);
+
+            out = sim_arm(obj, base_handle,joint_handle,fmt);
             
         end
         
         function out = youBot(obj,handle)
         % VREP.youBot
         %
-        % Generates a youBot object from either an object name or 
+        % Generates a sim_youBot object from either an object name or 
         % object ID.
         %
         % Arguments:
@@ -2209,7 +2367,7 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = youBotTRS(obj,handle)
         % VREP.youBotTRS
         %
-        % Generates a TRS modified youBot object from either an object name
+        % Generates a sim_youBot_TRS object from either an object name
         % or object ID.
         %
         % Arguments:
@@ -2228,7 +2386,7 @@ classdef VREP < handle %simulator no need to inherit from this
         function out = diffBot(obj,handle)
         % VREP.diffBot
         %
-        % Generates a diffBot object from either an object name
+        % Generates a sim_diffBot object from either an object name
         % or object ID.
         %
         % Arguments:
@@ -2303,25 +2461,25 @@ classdef VREP < handle %simulator no need to inherit from this
         function e = errcheck(obj,r)
             
                 switch (r)               
-                        case obj.sim.simx_return_novalue_flag % Bit 0
+                        case obj.vrep.simx_return_novalue_flag % Bit 0
                             msgid = 'VREP:NoReply';
                             error = 'Input buffer does not contain a command reply.';
-                        case obj.sim.simx_return_timeout_flag % Bit 1
+                        case obj.vrep.simx_return_timeout_flag % Bit 1
                             msgid = 'VREP:Timeout';
                             error = 'Function timed out. Network connection is down or slow.';
-                        case obj.sim.simx_return_illegal_opmode_flag % Bit 2
+                        case obj.vrep.simx_return_illegal_opmode_flag % Bit 2
                             msgid = 'VREP:IllegalOperationMode';
                             error = 'Function does not support the use of the selected operation mode.';
-                        case obj.sim.simx_return_remote_error_flag % Bit 3
+                        case obj.vrep.simx_return_remote_error_flag % Bit 3
                             msgid = 'VREP:ServerSideError';
                             error = 'Server-side function error. Check function handle is valid.';
-                        case obj.sim.simx_return_split_progress_flag % Bit 4
+                        case obj.vrep.simx_return_split_progress_flag % Bit 4
                             msgid = 'VREP:Busy';
                             error = 'Previous split command is still being processed. Try an opmode that does not split commands if this is an issue.';
-                        case obj.sim.simx_return_local_error_flag % Bit 5
+                        case obj.vrep.simx_return_local_error_flag % Bit 5
                             msgid = 'VREP:ClientSideError';
                             error = 'Client-side function error.';
-                        case obj.sim.simx_return_initialize_error_flag % Bit 6
+                        case obj.vrep.simx_return_initialize_error_flag % Bit 6
                             msgid = 'VREP:NotStarted';
                             error = 'Please call simxStart first. This error may also occur when you have a Remote API instance already active .';
                     otherwise

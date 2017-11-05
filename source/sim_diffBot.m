@@ -1,16 +1,26 @@
 classdef sim_diffBot < sim_entity
-%% A rudimentary diff-drive robot for demoScene2
+%% sim_diffBot %%
+%
+% A class to represent the beautiful piece of art that is the diffBot in
+% demoScene2. A simple differential drive robot with a camera. Encoders are
+% cumulatively count up and never wrap. The count is handled server (V-REP)
+% side and the value published to signals. See the child script attached to
+% the diffBot in the scene.
 %
 % Properties
 %
-%   wheels          %
-%   rgbdcamera      %
+%   wheels          % 2 element array of joint objects representing the
+%                     wheels.
+%   rgbdcamera      % A sim_cameraRGBD object representing the same RGBD
+%                     camera as found in the TRS Task.
 %
 % Methods
 %
-%   setMotorVel     %
-%   getImage        %
-%   getEncoder      %
+%   setMotorVel     % A two element array containing target wheel
+%                     velocities in rads/sec.
+%   getImage        % Retrieve an RGB Image from the camera.
+%   getEncoder      % Retrieve wheel encoder readings in radians. Reading is
+%                     cumulative and doesn't wrap. Returns a 2-vector.
 %
     
     properties

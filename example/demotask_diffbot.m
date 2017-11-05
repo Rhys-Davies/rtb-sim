@@ -1,14 +1,12 @@
 function [] = demotask_diffbot()
 
 clc
+fig = figure();
+cla
 
 startup_mvtb;
 
 % All API functions use SI units.
-
-fig = figure(1);
-
-cla
 
 %% Problem parameters
 
@@ -20,7 +18,7 @@ cla
 
 init_pos = [.5,.5,0];
 lndmrks_need = [29, -0.2750, 2.9750;
-                38, 1.2250, -3.6];
+                38, 2.2750, -3.05];
 rescue_point = [-3.25,2.1];
 transformed_rescue = [];
 
@@ -33,6 +31,7 @@ l57 = s.entity('57');
 l38 = s.entity('38');
 l29 = s.entity('29');
 l27 = s.entity('27');
+res = s.entity('RescuePoint');
 mref = s.entity('MapRef');
 
 pos45 = l45.position(mref); 
@@ -40,6 +39,7 @@ pos57 = l57.position(mref);
 pos38 = l38.position(mref);
 pos29 = l29.position(mref);
 pos27 = l27.position(mref);
+res_pos = res.position(mref);
 
 Y = [pos45(2),pos57(2),pos38(2),pos29(2),pos27(2)];
 X = [pos45(1),pos57(1),pos38(1),pos29(1),pos27(1)];
@@ -50,13 +50,14 @@ X = [pos45(1),pos57(1),pos38(1),pos29(1),pos27(1)];
 
 s.startSim();
 db = s.diffBot('diffBot');
-ekf = demoEKF(init_pos,0.01,0.01,0.01,0.01);
+ekf = demoEKF(init_pos,0.01,0.01,0.01,0.01); % (init_pose,omega_l,omega_r,omega_d,omega_b)
 
 run = true;
 state = 'initekf';
 Z = getZ([4,4],init_pos);
 scan = 0;
 drive = 0;
+step = 0;
 
 while run
     
@@ -72,14 +73,44 @@ while run
         
         case 'start_scan'
             
-            odo = turn(db,deg2rad(90));
-            state = 'turn';
+            if scan < 90
+                
+                if (90 - scan) < 15
+                    step = 90 - scan;
+                else
+                    step = 15;
+                end
+                
+                odo = turn(db,deg2rad(step));
+                scan = scan + rad2deg(odo(2));
+                
+            else
+                state = 'turn';
+                scan = 0;
+                odo = [0,0];
+            end
+            
 
-        case 'turn'
-  
-            odo = turn(db,-deg2rad(45));
-            state = 'translate';
-
+        case 'turn'          
+                           
+            if scan < 45
+                
+                if (45 - scan) < 15
+                    step = 45 - scan;
+                else
+                    step = 15;
+                end
+                
+                odo = turn(db,-deg2rad(step));
+                scan = scan + abs(rad2deg(odo(2)));
+                
+            else
+                state = 'translate';
+                scan = 0;
+                odo = [0,0];
+            end
+            
+           
         case 'translate'
                 
                 if drive > Z(1)
@@ -98,7 +129,7 @@ while run
         case 'scan' 
             
             if scan < 360
-                odo = turn(db,-deg2rad(15));
+                odo = turn(db,deg2rad(15));
                 scan = scan + 15;
             else
                 state = 'find';
@@ -108,6 +139,10 @@ while run
         case 'find'
             
             % check landmarks against lndmrks_need
+            
+            check1 = [];
+            check2 = [];
+            
             if size(lndmrk_id,2) == 5 % Found all five.
                 check1 = find(lndmrk_id == lndmrks_need(1,1)); 
                 check2 = find(lndmrk_id == lndmrks_need(2,1)); 
@@ -142,12 +177,32 @@ while run
             
         case 'turn2rescue'
             
-            odo = turn(db,Z(2));
-            state = 'move2rescue';
+            z2abs = abs(rad2deg(Z(2)));
+            if Z(2) < 0
+                a = -1;
+            else
+                a = 1;
+            end
+            
+            if scan < z2abs
+                
+                if (z2abs - scan) < 15
+                    step = Z(2) - scan;
+                else
+                    step = 15;
+                end
+                
+                odo = turn(db,a*deg2rad(step));
+                scan = scan + abs(rad2deg(odo(2)));
+            else
+                state = 'move2rescue';
+                scan = 0;
+                odo = [0,0];
+            end
 
         case 'move2rescue'
 
-            if drive > Z(1)
+            if drive >= Z(1)
                state = 'done';
             else
                if (Z(1) - drive) < .3
@@ -166,9 +221,8 @@ while run
             break;
             
     end
-
-
-    im = db.rgbdcamera.image();
+        
+    im = db.rgbdcamera.get_image();
     lnd = findLandmarks(im);
     [mu_t,sigma_t] = ekf.update(odo,lnd);
     lndmrk_id = ekf.lndmrk_id;
@@ -226,10 +280,12 @@ while run
     if ~isempty(transformed_rescue)
     
         scatter(transformed_rescue(1),transformed_rescue(2),'pk');
+        scatter(res_pos(1),res_pos(2),'pr');
     
     end
     
     hold off
+    drawnow;
     
             
          
@@ -455,7 +511,7 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            distance = (.10*640)/height;
            ratio = height/width;
                       
-           if (distance < 5.5) && (ratio > .4999)
+           if (distance < 5.2) && (ratio > .51)
            
                lnd(tally,1) = distance + .175;
 

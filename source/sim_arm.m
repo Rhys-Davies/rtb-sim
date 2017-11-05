@@ -1,16 +1,19 @@
 %% sim_arm
+%
 % A class to represent an assembly that consists of linked joints 
 % such as a robot arm. Can also be used for legs on a humanoid robot.
-% ident in this case should be the string name or simulator ID
-% of the hightest level joint (eg. Joint0)  'youBotArmJoint%d'
 %
+% Argument base should be the object that anchors the arm, eg. Its mounting point on
+% the youBot. 
 %
-% Possible %TODO: Make inherit from sim_entity where the entity in question
-% is the reference point of the arm. eg. you would pass the base of the arm
-% model in the case of an arm robot, or the point where the arm mounts to 
-% the robot in the case of combination mobile+arm robots (such as 
-% youBot_ref in the case of the youBot.
-% 
+% An arm joint in V-REP is usually named as: robotNamejointName# where # is
+% the n-th joint.
+%
+% 'handle' is the name of the assembly (eg. 'youBot').
+%
+% 'fmt' is the format of the joint name. This will be '%sjointName%d 
+% (eg. %sArmJoint%d for the youBot). 
+%
 % Properties
 %   
 %   numj                % Number of joints in the arm
@@ -18,9 +21,8 @@
 %
 % Methods
 %
-%   state               % An array of the intrinsic values of all joints in
-%                         the arm
-%   set_state           % Set the intrinsic values of all joints in the arm
+%   state               % An array of the all joint angles of all arm joints
+%   set_state           % Set the joint angle of all joints in the arm
 %                         using an m-vector, where m = numj
 %
 %   enable_control      % Enables motor control for all arm joints.
@@ -28,7 +30,7 @@
 %
 
 
-classdef sim_arm < sim_entity % < sim_entity
+classdef sim_arm < sim_entity
     
     properties
         
@@ -38,12 +40,18 @@ classdef sim_arm < sim_entity % < sim_entity
     end
     
     methods
-        
-        function obj = sim_arm(sim, base, list, num)
+  
+        function obj = sim_arm(sim, base, handle, fmt)
 
             obj = obj@sim_entity(sim,base);
-            obj.numj = num;
             
+            if nargin < 4
+                [list,num] = obj.sim.armhelper(handle);
+            else
+                [list,num] = obj.sim.armhelper(handle,fmt);
+            end
+            
+            obj.numj = num;
             
             for i=1:obj.numj
                joints(i) = obj.sim.joint(list(i));

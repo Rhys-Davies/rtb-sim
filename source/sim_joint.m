@@ -1,4 +1,4 @@
-%% Joint object Class %%
+%% sim_joint %%
 %
 % A class to handle joint objects in the simulation
 % environment. Inherits from entity class. Not intended for spherical
@@ -8,18 +8,24 @@
 %       
 % Methods:
 %
-% angl                     % Retrieves joint's current intrinsic position.
-% force                    % Retrieves magnitue of force acting on joint.
+%   get_angle                % Retrieves joint's current intrinsic position 
+%                              in radians.
+%                               
+%   force                    % Retrieves magnitude of force acting on joint in
+%                              Newton meters.
+%   mode                     % Returns [m,c], where m = joint motor enabled
+%                              or disabled, and c = joint motor control
+%                              enabled or disabled. 
 %
-% set_angl                 % Sets joint's intrinsic position.
-% set_tgt_vel              % Sets joint's target velocity. Only 
-%                             applicable if the joint motor is enabled.  
-% set_tgt_pos              % Sets joint's target position. Only applicable
-%                             if the joint motor and position control are
-%                             enabled.
+%   set_angle                % Sets joint's intrinsic position in radians.
+%   set_tgt_vel              % Sets joint's target velocity. Only 
+%                              applicable if the joint motor is enabled.  
+%   set_tgt_pos              % Sets joint's target position in radians. 
+%                              Only applicable if the joint motor and 
+%                              position control are enabled.
 %
-% enable_mcontrol          % Enables joint motor control
-% disable_mcontrol         % Disables joint motor control
+%   enable_mcontrol          % Enables joint motor control
+%   disable_mcontrol         % Disables joint motor control
 %
 
 classdef sim_joint < sim_entity
@@ -35,7 +41,7 @@ classdef sim_joint < sim_entity
             
         end
         
-        function pos = angl(obj)
+        function pos = get_angle(obj)
             
             pos = obj.sim.getJointPosition(obj.id);
 
@@ -51,17 +57,21 @@ classdef sim_joint < sim_entity
        
         end
         
-        function m = mode(obj)
-           %sim_jointintparam_motor_enabled (2000): int32 parameter : dynamic motor enable state (0 or !=0)
-           %sim_jointintparam_ctrl_enabled (2001): int32 parameter : dynamic motor control loop enable state (0 or !=0)
+        function res = mode(obj)
+        % Returns [m,c].
+        % m = motor enabled (1 = yes, 0 = no)
+        % c = motor control (1 = yes, 0 = no)
+        
+           m = obj.get_IntParam(2000);
+           c = obj.get_IntParam(2001);
            
-           %Returns the current mode of the joint.
+           res = [m,c];
            
         end
         
         %% Setters
         
-        function set_angl(obj,new)
+        function set_angle(obj,new)
             
                 obj.sim.setJointPosition(obj.id,new);
             

@@ -1,45 +1,25 @@
-%% Class SIM_TRS_YOUBOT
+%% sim_trs_youBot
 %  A class to represent the TRS modified youBot.
 %  The stock VREP youBot does not contain the RGBD sensor or Hokuyo
 %  The naming scheme for the wheels and arm joints is identicle however.
 %
 %  Properties:
 %   
-%   arm                     % A sim_arm object representing the youBot's
-%                             arm. Name formatting is: ('youBot','%sArmJoint%d') 
-%   gripper                 % A sim_entity object representing the youBot's
-%                             gripper.
-%   gripper_target          % A sim_entity object representing the youBot's
-%                             gripper target. This sets the target position
-%                             for the arm tip when kinematic_mode = 2.
-%   ref                     % A sim_entity object representing the youBot's
-%                             central reference point.
-%   arm_ref                 % A sim_entity object representing the youBot's
-%                             arm's reference point on the robot.
 %   hokuyo                  % A sim_fast_hokuyo object representing the
 %                             hokuyo laser scanner mounted to the TRS 
 %                             version of the youBot. 
 %   rgbdcamera              % A sim_rgdb_camera object that represents the
 %                             combination xyz and rgb camera mounted to the
 %                             TRS version of the youBot.
-%   wheels                  % An array of sim_joint objects that represt
-%                             the youBot's four omniwheels. To work with
-%                             sim_joint.setTargetVelocity, joint motors
-%                             must be enabled and joint motor control
-%                             disabled.
-%                           
-%   mo_ctrl                 % The youBot motion controller. See
-%                             yb_motion_controller.m.
 %
 %  Methods:
 %
-%   drive                   % Calls the youBot's motion controller object.
-%                             and applies the resulting velocities to the
-%                             youBot's wheels.
-%   set_kinematicmode       % Sets kinematic mode for all joints with both 
-%                             motors and motor control enabled. Valid modes
-%                             are 0, 1, and 2.
+%   hokuyo_scan             % Retrieves a Hokuyo scan. Alternatively could 
+%                             call youBot.hokuyo.scan.
+%   get_image               % Retrieves a RGB Image from the camera.
+%   get_point_cloud         % Retrieves a point cloud from the camera.
 %
+
 
 
 classdef sim_youBot_TRS < sim_youBot
@@ -58,7 +38,8 @@ classdef sim_youBot_TRS < sim_youBot
             obj = obj@sim_youBot(sim,ident);
             
            
-            obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
+            %obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
+            obj.hokuyo = sim.hokuyo('fastHokuyo');
             obj.rgbdcamera = sim.rgbdCamera('rgbdSensor');
 
             
@@ -66,21 +47,21 @@ classdef sim_youBot_TRS < sim_youBot
         end
         
         
-        function res = hokuyo_scan()
+        function [pnts,contacts] = hokuyo_scan(obj)
             
-            
+            [pnts,contacts] = obj.hokuyo.scan();
             
         end
         
-        function res = rgb_image()
+        function im = get_image(obj)
             
-            
+            im = obj.rgbdcamera.get_image();
         
         end
         
-        function res = xyz_image()
+        function pnts = get_point_cloud(obj)
             
-            
+            pnts = obj.rgbdcamera.get_point_cloud();
             
         end
         

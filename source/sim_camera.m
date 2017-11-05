@@ -1,15 +1,18 @@
-%% RGB Sensor Class %%
+%% sim_camera %%
 %
-% A class to handle objects that generate image pixel data about the virtual
-% world they are in. Inherits from entity class.
-
+% A class to handle vision sensors that generate RGB or Greyscale images.
+% Not to be confused with VREP Cameras, those are simply for viewing
+% scenes, not retrieving images. Inherits from sim_vision_sensor.
 %
 % Properties
 %
 % Methods
 %
-%   frame               % Retrieves data from from the sensor.
-%   resolution          % Retrieves scan resolution of sensor.
+%   get_image           % Retrieves an image from the camera. Will return a
+%                         w*h*3 image matrix, or a w*h*1 image matrix if in
+%                         greyscale mode. get_image(true) will return a
+%                         greyscale image.
+%   resolution          % Retrieves scan resolution of sensor. Returns [w,h]
 %   fov                 % Retrieves the scan angle, or field of view, of
 %                         the sensor.
 %
@@ -17,21 +20,24 @@
 %   set_fov             % Sets the sensor's scan angle.
 %
 
-classdef sim_rgb_sensor < sim_sensor
+classdef sim_camera < sim_vision_sensor
+
     
     properties
     end
     
     methods
         
-        function obj = sim_rgb_sensor(sim,ident)
         
-            obj = obj@sim_sensor(sim,ident);
+        function obj = sim_camera(sim,ident)
+        
+            obj = obj@sim_vision_sensor(sim,ident);
             
         end
-        
-        function data = grab(obj,grey)
-        %% sim_rgb_sensor.grab
+         
+        function im = get_image(obj,grey)
+        % sim_rgb_sensor.get_image
+        %
         % Retrives a single frame from camera
         %
         % Arguments
@@ -47,10 +53,10 @@ classdef sim_rgb_sensor < sim_sensor
             
             obj.sim.setIntegerSignal('handle_rgb_sensor',1);
             
-            data = obj.sim.readVisionSensor(obj.id,grey);
+            im = obj.sim.readVisionSensor(obj.id,grey);
             
-        end
         
+        end
         
     end
     

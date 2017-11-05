@@ -1,12 +1,14 @@
-%% sim_sensor
-%   A base class for vision sensors and laser sensors
-%   simulated as vision sensors. 
-%   This class is non-functional on its own, as most sensors need a
-%   sensor specific signal to be sent to enable a capture.
+%% sim_vision_sensor
+%
+%   A base class for V-REP vision sensors. This includes sensors used for 
+%   fast "laser" sensors, which are simulated as vision sensors. Inherits
+%   from sim_entity.
 %
 % Methods
 %
-%   frame               % Retrieves data from from the sensor.
+%   get_data            % Returns [dataPackets, dataIndex], raw sensor data.
+%                         The contents of dataPackets will depend entirely
+%                         on which filters are active.
 %   resolution          % Retrieves scan resolution of sensor.
 %   fov                 % Retrieves the scan angle, or field of view, of
 %                         the sensor.
@@ -16,24 +18,24 @@
 %
 
 
-classdef sim_sensor < sim_entity
+classdef sim_vision_sensor < sim_entity
    
    
     
     properties
     end
     
-    methods (Abstract)
-    
-        data = grab(obj)
-    
-    end
-    
     methods
         
-        function obj = sim_sensor(sim,ident)
+        function obj = sim_vision_sensor(sim,ident)
         
             obj = obj@sim_entity(sim,ident);
+            
+        end
+        
+        function [dataPackets, dataIndex] = get_data(obj)
+        
+            [dataPackets, dataIndex] = obj.sim.readPointVisionSensor(obj.id);
             
         end
         
@@ -48,24 +50,9 @@ classdef sim_sensor < sim_entity
         
         function f = fov(obj)
         %% sim_sensor.fov
-        % Gets the FOV of the sensor. Technically this is actually the
-        % perspective angle... this matters if the sensor resolution is not
-        % m-by-m. TODO: Fix this. Same for set_fov.
+        % Gets the FOV of the sensor.
         
-        
-        pa = obj.get_FloatParam(1004);
-        
-        %  res = obj.resolution;
-        %  ratio=res(1)/res(2);
-        %  if (ratio>1)
-        %      f = 2*atan(tan(per_ang/2)/ratio);
-        %  else
-        %      f = pa;
-        %  end
-        %  
-        %  f = rad2deg(fov)
-
-        f = pa;
+        f = obj.get_FloatParam(1004);
         
 
         

@@ -1,5 +1,6 @@
-%% sim_cameraRGBD
-% The TRS Task combination RGB/XYZ camera.
+%% sim_cameraRGBD %%
+%
+% This class handles he TRS Task combination RGB/XYZ camera.
 % ident = handle/ID of the camera body (eg. 'rgbdSensor')
 %
 % Properties
@@ -10,7 +11,7 @@
 % Methods
 %
 %   image               % Takes an image from the rgb sensor
-%                         TODO: Add argument to allow greyscale capture
+%                        
 %   point_cloud         % Captures a point_cloud from the xyz sensor 
 %   
 
@@ -26,20 +27,20 @@ classdef sim_cameraRGBD < sim_entity
         function obj = sim_cameraRGBD(sim,ident,varargin)
             
             obj = obj@sim_entity(sim,ident);
-            obj.rgbsensor = obj.sim.rgb_sensor('rgbSensor');
+            obj.rgbsensor = obj.sim.camera('rgbSensor');
             obj.xyzsensor = obj.sim.xyz_sensor('xyzSensor');
             
         end
         
-        function im = image(obj)
+        function im = get_image(obj)
             
-            im = obj.rgbsensor.grab;
+            im = obj.rgbsensor.get_image;
             
         end
         
-        function pnts = point_cloud(obj)
+        function pnts = get_point_cloud(obj)
             
-            pnts = obj.xyzsensor.grab;
+            pnts = obj.xyzsensor.scan;
             
         end
         

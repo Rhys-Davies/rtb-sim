@@ -1,7 +1,6 @@
-%% Class SIM_TRS_YOUBOT
-%  A class to represent the TRS modified youBot.
-%  The stock VREP youBot does not contain the RGBD sensor or Hokuyo
-%  The naming scheme for the wheels and arm joints is identicle however.
+%% sim_youBot %%
+
+%  A class to represent the stock V-REP youBot.
 %
 %  Properties:
 %   
@@ -24,8 +23,8 @@
 %
 %  Methods:
 %
-%   move                    % Takes x_dot, y_dot, theta_dot and converts them into
-%                             velocities for each individual wheels.
+%   move                    % Takes [x_dot, y_dot, theta_dot] and converts them into
+%                             velocities for each individual wheel.
 %
 %   set_wheel_vel           % Takes a vector of velocities with length 4 
 %                             and sets each wheel in the following order

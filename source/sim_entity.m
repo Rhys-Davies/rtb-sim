@@ -1,4 +1,4 @@
-%% Entity Superclass %%
+%% sim_entity %%
 %
 % A superclass that describes a generic object in the simulation world.
 % Subclass for specific object types, can be used without subclassing.
@@ -13,16 +13,16 @@
 %
 %
 % Methods:
-%   pose                Gets the pose of an object relative to another
-%   position            Gets the global position of the object
-%   orientation         Gets the global orientation of the object
+%   pose                Gets the pose of an object. A 4x4 matrix.
+%   position            Gets the global position of the object in meters.
+%   orientation         Gets the global orientation of the object in radians.
 %   get_intParam        Retrieves the value of object's named integer paramter.
 %   get_floatParam      Retrieves the value of object's named float paramter.
 %
 %
-%   set_pose            Sets the pose of an object relative to another
-%   set_position        Sets the global position of the object
-%   set_orientation     Sets the global orientation of the object
+%   set_pose            Sets the pose of an object. A 4x4 matrix.
+%   set_position        Sets the global position of the object in meters
+%   set_orientation     Sets the global orientation of the object in radians.
 %   set_intParam        Sets object's named integer parameter to a given value.
 %   set_floatParam      Sets object's name float parameter to a given value.
 
@@ -74,7 +74,7 @@ classdef sim_entity < handle
             pos = obj.sim.getPosition(obj.id,rel2);
             eul = obj.sim.getOrientation(obj.id,rel2);
             
-            out = transl(pos) * eul2tr(eul, 'deg');
+            out = transl(pos) * eul2tr(eul);
             
         end
         
