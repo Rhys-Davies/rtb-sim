@@ -270,15 +270,15 @@ classdef VREP < handle
             defaultgettermode = obj.vrep.simx_opmode_oneshot_wait;
             defaultsettermode = obj.vrep.simx_opmode_oneshot;
             
-            addOptional(p,'IP',defaultIP,@isstring);
-            addOptional(p,'PORT',defaultPORT,@isnumeric);
-            addOptional(p,'timeout',defaulttimeout,@isnumeric);
-            addOptional(p,'getter_mode',defaultgettermode,@isstring);
-            addOptional(p,'setter_mode',defaultsettermode,@isstring);
-            addOptional(p,'cycle',defaultcycle,@isnumeric);
-            addOptional(p,'wait',defaultwaitforconnect,@islogical); %wait for connect
-            addOptional(p,'reconnect',defaultreconnect,@islogical); %reconnect on error
-            addOptional(p,'path',defaultpath,@isstring);
+            addParameter(p,'IP',defaultIP,@isstring);
+            addParameter(p,'PORT',defaultPORT,@isnumeric);
+            addParameter(p,'timeout',defaulttimeout,@isnumeric);
+            addParameter(p,'getter_mode',defaultgettermode,@isstring);
+            addParameter(p,'setter_mode',defaultsettermode,@isstring);
+            addParameter(p,'cycle',defaultcycle,@isnumeric);
+            addParameter(p,'wait',defaultwaitforconnect,@islogical); %wait for connect
+            addParameter(p,'reconnect',defaultreconnect,@islogical); %reconnect on error
+            addParameter(p,'path',defaultpath,@isstring);
             
             parse(p,varargin{:});
             
@@ -520,95 +520,233 @@ classdef VREP < handle
         
         function loadScene(obj,scene,varargin)
         % VREP.loadScene
-        % %% TODO
-        % Loads a specified scene.
-        % 
         %
+        % There are three ways to use this function.
         %
-            
+        % First: To load a server side scene from V-REP scene folder.
+        %   
+        %   To do this: Ignore all parameters, and just specify the
+        %   arguement scene as the filename.
+        %   You can include the /scenes directory and the 
+        %   .ttt file extension, however it is not necessary.
+        %
+        %   Example: loadScene('e-puckDemo')
+        %
+        % Second: To load a server side scene that is not in the V-REP
+        % scene folder.
+        %
+        %   To do this: Argumet scene is the file name (with or without the
+        %   file extension) and specify the full directory to the file using
+        %   parameter 'fn'. 
+        %
+        %   Example: loadScene('e-puckDemo','fn','Drive:/full/path/to/scene/directory')
+        %
+        % Third: To load a client side scene.
+        %
+        % To do this: Argument scene is the file name (with or without the file
+        % extension) and then specify parameter
+        % 'fn','Drive:/full/path/to/scene/directory'). Also specify
+        % parameter 'clientside',true.
+        %
+        %   Example:
+        %   loadScene('e-puckDemo','fn','Drive:/full/path/to/scene/directory','clientside',true)
+        %
+        % Arguments:
+        %
+        %   scene           % A charater array containing the file name of a scene.
+        %
+        % Parameters:
+        %
+        %   'clientside'    % Whether or not scene is on the same system as
+        %                     the V-REP server. If running MATLAB and V-REP
+        %                     on the same machine, the model is always considered
+        %                     serverside.
+        %
+        %   'fn'            % a character array containing the full directory
+        %                     path to the directory that contains the scene.
+        %
+        
             p = inputParser;
-            defaultFN = obj.path;
+            
+            defaultFN = 'None';
             defaultLoc = false;
             
-            addOptional(p,'fn',defaultFN,@isstring);
-            addOptional(p,'local',defaultLoc,@islogical);
+            addRequired(p,'scene',@ischar);
+            addParameter(p,'fn',defaultFN,@ischar);
+            addParameter(p,'clientside',defaultLoc,@islogical);
             
-            parse(p,varargin{:});
+            parse(p,scene,varargin{:});
             
-            a = p.Results.fn;
-            b = p.Results.local;
+            cs_path = p.Results.fn;
+            clientside = p.Results.clientside;
             
-            if ~strcmp(a,'None') && ~b
+            nocspath = strcmp(cs_path,'None');
+            nopath = strcmp(obj.path,'None');
+            
+                    
+            if clientside
                 
-                error('RTB-SIM:VREP:','A full path to scene must be given if using API files on path.');
+                if nocspath
+                    
+                    error('RTB-SIM:VREP:','A path must be given if model is Client side!');
                 
-            else    
+                elseif ~nocspath
                 
-               if ~b
-                   
-                   if scene(1) ~= '/'
+                     scene = fullfile(cs_path, [scene '.ttt']);
+                    
+                end
+                
+            elseif ~clientside && nocspath
+               
+                if ~nopath
+                    
+                    scene = fullfile(obj.path, 'scenes', [scene '.ttt']);
+                    
+                elseif nopath
+                
+                    if ~startsWith(scene,"scenes/")
+                        
+                          scene = sprintf('scenes/%s',scene);
+                          
+                   end
+
+                   if ~endsWith(scene,".ttt")
                        
-                       scene = fullfile(obj.path, 'models', [scene '.ttm']);
+                       scene = sprintf('%s.ttt',scene);
                        
                    end
-                   
-               end
-                   
-            end
+
+                end
+                
+            elseif ~clientside && ~nocspath
+                 
+                scene = fullfile(cs_path, [scene '.ttt']);
+                
+            end    
             
+            disp(scene)
             obj.stopSim();
             
-            r = obj.vrep.simxLoadScene(obj.clientID,scene,b,obj.blocking_mode);
+            pause(1);
             
-           if r ~= 0 && r ~= 1
+            r = obj.vrep.simxLoadScene(obj.clientID,scene,clientside,obj.blocking_mode);
+            
+            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
             end
             
         end
         
         function id = loadObject(obj,model,varargin)
-        % VREP.loadSimObject
-        % %% TODO
-        % Loads an object/model into the currently open scene. Specify
-        % opt = 1 if file is client side, leave blank or specify opt =
-        % 0 if file is server side.
+        % VREP.loadObject
+        %
+        % There are three ways to use this function.
+        %
+        % First: To load a server side model from V-REP model library.
+        %   
+        %   To do this: Ignore all parameters, and just specify the
+        %   arguement model as the path and filename as seen in the V-REP 
+        %   model browser. You can include the /models directory and the 
+        %   .ttm file extension, however it is not necessary.
+        %
+        %   Example: loadObject('furniture/chairs/sofa')
+        %
+        % Second: To load a server side model that is not in the V-REP
+        % model library.
+        %
+        %   To do this: Argumet model is the file name (with or without the
+        %   file extension) and specify the full directory to the file using
+        %   parameter 'fn'. 
+        %
+        %   Example: loadObject('sofa','fn','Drive:/full/path/to/model/directory')
+        %
+        % Third: To load a client side model.
+        %
+        % To do this: Argument model is the file name (with or without the file
+        % extension) and then specify parameter
+        % 'fn','Drive:/full/path/to/model/directory'). Also specify
+        % parameter 'clientside',true.
+        %
+        %   Example:
+        %   loadObject('sofa','fn','Drive:/full/path/to/model/directory','clientside',true)
+        %
+        %
+        %   
+        %
+        % Arguments:
+        %
+        %   model           % A charater array containing the file name of a model.
+        %
+        % Parameters:
+        %
+        %   'clientside'    % Whether or not model is on the same system as
+        %                     the V-REP server. If running MATLAB and V-REP
+        %                     on the same machine, the model is always considered
+        %                     serverside.
+        %
+        %   'fn'            % The full directory path to the directory that
+        %                     contains the model as a character array. 
+        %
             
             p = inputParser;
-            defaultFN = obj.path;
+            
+            defaultFN = 'None';
             defaultLoc = false;
-            defaultClient = true;
             
-            addOptional(p,'fn',defaultFN,@isstring);
-            addOptional(p,'local',defaultLoc,@islogical);
-            addOptional(p,'client',defaultClient,@islogical);
+            addRequired(p,'model',@ischar);
+            addParameter(p,'fn',defaultFN,@ischar);
+            addParameter(p,'clientside',defaultLoc,@islogical);
             
-            parse(p,varargin{:});
+            parse(p,model,varargin{:});
             
-            a = p.Results.fn;
-            b = p.Results.local;
-            c = p.Results.client;
+            cs_path = p.Results.fn;
+            clientside = p.Results.clientside;
             
+            nocspath = strcmp(cs_path,'None');
+            nopath = strcmp(obj.path,'None');
             
-            
-            
-            if ~strcmp(a,'None') && ~b
+                    
+            if clientside
                 
-               error('RTB-SIM:VREP:','A full path to object must be given if using API files on path.');
+                if nocspath
+                    
+                    error('RTB-SIM:VREP:','A path must be given if model is Client side!');
                 
-            else    
+                elseif ~nocspath
                 
-               if ~b
-                   
-                   if model(1) ~= '/'
+                     model = fullfile(cs_path, [model '.ttm']);
+                    
+                end
+                
+            elseif ~clientside && nocspath
+               
+                if ~nopath
+                    
+                    model = fullfile(obj.path, 'models', [model '.ttm']);
+                    
+                elseif nopath
+                
+                    if ~startsWith(model,"models/")
+                        
+                          model = sprintf('models/%s',model);
+                          
+                   end
+
+                   if ~endsWith(model,".ttm")
                        
-                       model = fullfile(obj.path, 'models', [model '.ttm']);                    
+                       model = sprintf('%s.ttm',model);
                        
                    end
-               end
-                   
-           end
+
+                end
+                
+            elseif ~clientside && ~nocspath
+                 
+                model = fullfile(cs_path, [model '.ttm']);
+                
+            end    
             
-            [r,id] = obj.vrep.simxLoadModel(obj.clientID,model,b,obj.blocking_mode);
+            [r,id] = obj.vrep.simxLoadModel(obj.clientID,model,clientside,obj.blocking_mode);
             
             if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -651,7 +789,10 @@ classdef VREP < handle
         %
             
             obj.stopSim();
-            r = obj.vrep.simxCloseScene(obj.clientID,obj.setter_mode);
+            
+            pause(1);
+            
+            r = obj.vrep.simxCloseScene(obj.clientID,obj.blocking_mode);
             
            if r ~= 0 && r ~= 1
                 throw(obj.errcheck(r))
@@ -950,7 +1091,7 @@ classdef VREP < handle
             if nargin < 3
                 str_out = true;
             else
-                if ~islogical(vrepout)
+                if ~islogical(str_out)
                     error("VREP.getType: str_out must be logical (true or false)");
                 end  
             end

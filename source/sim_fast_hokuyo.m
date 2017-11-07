@@ -14,10 +14,7 @@
 %                 distance are discarded. Range = 5.
 %   trans1      % Transform from sensor 1 reference frame to ref
 %   trans2      % Transform from sensor 2 reference frame to ref
-%   h1pos       % Position of sensor 1 w.r.t to ref
-%   h2pos       % Position of sensor 2 w.r.t to ref
-%   h1eul       % Orientation of sensor 1 w.r.t to ref
-%   h2eul       % Orientation of sensor 2 w.r.t to ref
+%   plot_ref    % Reference point for plotting the data.
 %
 % Methods
 %
@@ -33,16 +30,12 @@ classdef sim_fast_hokuyo < sim_entity
     properties
         
         ref
+        plot_ref
         sensor1
         sensor2
         range = 5 % Range of Hokuyo Sensor in meters
         trans1
         trans2
-        h1pos
-        h2pos
-        h1eul
-        h2eul
-
        
     end
     
@@ -54,17 +47,11 @@ classdef sim_fast_hokuyo < sim_entity
             obj.sensor1 = obj.sim.xy_sensor('fastHokuyo_sensor1');
             obj.sensor2 = obj.sim.xy_sensor('fastHokuyo_sensor2'); 
             obj.ref = obj.sim.entity('fastHokuyo_ref');
-            
-            
              
-            obj.h1pos = obj.sensor1.position(obj.ref.id); 
-            obj.h2pos = obj.sensor2.position(obj.ref.id);
+            obj.plot_ref = obj.sensor1.position(obj.ref.id);
             
-            obj.h1eul = obj.sensor1.orientation(obj.ref.id);
-            obj.h2eul = obj.sensor2.orientation(obj.ref.id);
-            
-            obj.trans1 = transl(obj.h1pos) * trotx(obj.h1eul(1)) * troty(obj.h1eul(2)) * trotz(obj.h1eul(3)); %eul2tr(obj.h1eul)
-            obj.trans2 = transl(obj.h2pos) * trotx(obj.h2eul(1)) * troty(obj.h2eul(2)) * trotz(obj.h2eul(3)); %eul2tr(obj.h2eul)
+            obj.trans1 = obj.sensor1.pose(obj.ref);
+            obj.trans2 = obj.sensor2.pose(obj.ref);
              
             obj.sim.setIntegerSignal('displaylasers', 1);
             

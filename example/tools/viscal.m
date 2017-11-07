@@ -1,4 +1,4 @@
-function [] = viscal()
+function viscal()
 
 clc
 
@@ -25,9 +25,9 @@ s.startSim();
 db = s.diffBot('diffBot');
 
 %     
-im = db.rgbdcamera.image();
+im = db.rgbdcamera.get_image();
 imshow(im);
-lnd = findLandmarks(im);
+lnd = findLandmarks(im)
 
 end
 
@@ -72,87 +72,31 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
     
     t = transpose(contour_list.uc);
     [~,index] = sortrows(t,1,'ascend'); 
-    contourXsort = contour_list(:,index);
+    contourXsort = contour_list(:,index)
     colourXsort = colour_list(index,:);
     
     list = [transpose(contourXsort.uc) , transpose(contourXsort.vc)];
 
     
-    lim = size(contourXsort,2);
-    lnd = [];
-    tally = 0;
+    height = [];
     i = 1;
     go = true;
     
     while go
-    
-        height = contourXsort(i).vmax - contourXsort(i).vmin;
-        width = contourXsort(i).umax - contourXsort(i).umin;
-        upperY = contourXsort(i).vc + (height*2);
-        lowerY = contourXsort(i).vc - (height*2);
-        upperX = contourXsort(i).uc + width/2;
-        lowerX = contourXsort(i).uc - width/2;
-    
-        filt = list(:,1)>lowerX & list(:,1)<upperX & list(:,2)>lowerY & list(:,2)<upperY;
+        top = contourXsort(i).vmax
+        bottom = contourXsort(i).vmin
+        height(i,1) = top - bottom
+        i = i + 1;
         
-        if sum(filt) == 3
-           i = find(filt,1,'last') + 1;
-           tally = tally + 1;
-           id = colourXsort(filt==1);
-           cont = contourXsort(:,filt==1);
-           [~,ind] = sortrows(transpose(cont.vc),1,'descend');
-           cont = cont(:,ind);
-           id = id(ind);
-           lndid = bi2de([de2bi(id(1),2),de2bi(id(2),2),de2bi(id(3),2)]);
-           
-           distance = (.10*640)/height;
-           
-           ratio = height/width
-           
-           
-           if distance < 5.5
-           
-               lnd(tally,1) = distance + .175;
-
-               mid = cont(2).uc;
-
-               fov = 45;
-
-               if mid == 512
-                   an = 0;
-               else
-                  an = (((fov/2)/(512/2))*(mid-(512/2)))*-1;
-               end
-
-               lnd(tally,2) = deg2rad(an);
-               lnd(tally,3) = lndid;
-               
-           else
-               
-               tally = tally - 1; 
-               
-           end
-           
-        else
-            i = i + 1;
-        end
-        
-        if i > lim
+        if i > 3
             go = false;
         end
         
-    
     end
-    
-    landmarks = lnd;
 
-else
-    
-    landmarks = [];
-    
+    landmarks = height;
+
 end
-
-
 
 end
 

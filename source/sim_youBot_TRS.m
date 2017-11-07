@@ -28,7 +28,9 @@ classdef sim_youBot_TRS < sim_youBot
       
         hokuyo
         rgbdcamera
-
+        ybtransform
+        plot_ref
+  
     end
     
     methods
@@ -42,14 +44,19 @@ classdef sim_youBot_TRS < sim_youBot
             obj.hokuyo = sim.hokuyo('fastHokuyo');
             obj.rgbdcamera = sim.rgbdCamera('rgbdSensor');
 
-            
+            obj.ybtransform = obj.hokuyo.ref.pose(obj.ref.id);
+            obj.plot_ref = obj.hokuyo.ref.position(obj.ref.id);
             
         end
         
         
         function [pnts,contacts] = hokuyo_scan(obj)
+ 
             
-            [pnts,contacts] = obj.hokuyo.scan();
+            [data,con] = obj.hokuyo.scan();
+            
+            pnts = homtrans(obj.ybtransform, data);
+            contacts = con;
             
         end
         

@@ -62,26 +62,19 @@ while true
     youbotPos = yb.position;
     youbotOrient = yb.ref.orientation;
     
-    [pts, contacts] = yb.hokuyo.scan; % contacts are the obstacles ... .scan('plot',figure1)
+    [pts, contacts] = yb.hokuyo_scan;% contacts are the obstacles ... .scan('plot',figure1)
     
     %% Remove stuff like this: Plotting handled by hokuyo class
     if plotData
         % Read data from the Hokuyo
         
-
-        %s = yb.hokuyol.refer.position
-        %s = yb.hokuyo.hpos
-        s = yb.hokuyo.h1pos;
-      
+        s = yb.plot_ref;
+        
         subplot(211)
-%         plot(X(in), Y(in), '.g', pts(1, contacts), pts(2, contacts), '*r',...
-%              [s1(1), pts(1, :), s2(1)], [s1(2), pts(2, :), s2(2)], 'r',...
-%              0, 0, 'ob', s1(1), s1(2), 'or', s2(1), s2(2), 'or');
          
-        plot(pts(1, contacts), pts(2, contacts), '*r',...
-             [s(1), pts(1, :), s(1)], [s(2), pts(2, :), s(2)], 'b',...
-             0, 0, 'og', s(1), s(2), 'ob', s(1), s(2), 'or');
-         
+         plot(pts(1, contacts), pts(2, contacts), '*r',...
+              [s(1), pts(1, :), s(1)], [s(2), pts(2, :), s(2)], 'b',...
+              0, 0, 'og', s(1), s(2), 'ob', s(1), s(2), 'or');        
          
         axis([-5.5, 5.5, -5.5, 2.5]);
         axis equal;
@@ -89,14 +82,13 @@ while true
                       
     end
     
-    
     angl = -pi/2;
 
 %% Apply the state machine.
 
     switch (fsm)
         case 'rotate' 
-            %% First, rotate the robot to go to one table.             % The rotation velocity depends on the difference between the current angle and the target. 
+            %% First, rotate the robot to go to one table. 
             
             rotVel = angdiff(angl, youbotOrient(3))/2;
             
@@ -133,7 +125,8 @@ while true
 
             if plotData
                 subplot(223)
-                plot3(pts(1, :), pts(3, :), pts(2, :), '*');
+                %plot3(pts(1, :), pts(3, :), pts(2, :), '*'); % Plotting Z as Y and Y as Z.
+                plot3(pts(1, :), pts(2, :), pts(3, :), '*');
                 axis equal;
                 view([-169 -46]);
             end
@@ -150,12 +143,11 @@ while true
             fsm = 'extend';
             
         case 'extend'        
-            %% TODO Move the arm to face the object.
+            %% Move the arm to face the object.
             % Get the arm position. 
             
+            tpos = yb.gripper.position(yb.arm_ref.id); % 
             
-            tpos = yb.gripper.position(yb.arm_ref.id); % ptip rl2 armRef youBot_ref
-            %youBot_gripperPositionTip
             % If the arm has reached the wanted position, move on to the next state. 
             
             if norm(tpos - [0.3259 -0.0010 0.2951]) < .002
@@ -182,7 +174,7 @@ while true
             yb.gripper_target.set_position(tpos,yb.arm_ref.id);
 
         case 'grasp'
-             %% TODO %% Grasp the object by closing the gripper on it.
+             %% Grasp the object by closing the gripper on it.
             % Close the gripper. Please pay attention that it is not possible to determine the force to apply and 
             % object will sometimes slips from the gripper!
             yb.close_gripper;%res = vrep.simxSetIntegerSignal(id, 'gripper_open', 0, vrep.simx_opmode_oneshot_wait);

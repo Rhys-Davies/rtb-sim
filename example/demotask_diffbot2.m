@@ -1,8 +1,9 @@
-function [] = demotask_diffbot()
+function [] = demotask_diffbot2()
+%% DO NOT TOUCH THIS FILE BEFORE DEMO DAY AGAIN!!!!
+
 
 clc
 fig = figure();
-fig2 = figure();
 cla
 
 startup_mvtb;
@@ -51,136 +52,62 @@ X = [pos45(1),pos57(1),pos38(1),pos29(1),pos27(1)];
 
 s.startSim();
 db = s.diffBot('diffBot');
-ekf = demoEKF(init_pos,0.01,0.01,0.01,0.05); % (init_pose,omega_l,omega_r,omega_d,omega_b)
+ekf = demoEKF(init_pos,0.05,0.03,0.1,0.05); % (init_pose,omega_l,omega_r,omega_d,omega_b)
 
 run = true;
 state = 'initekf';
-stage = 'start_scan';
-mu_t = [];
-Z = [0,0];
+Z = getZ([4,4],init_pos);
 scan = 0;
 drive = 0;
+step = 0;
 
 while run
-    disp(state)
-    disp(stage)
-    disp(Z)
     
+    odo = [0,0];  
+
+
     switch state
        
         case 'initekf'
             
             odo = [0,0];
-            state = 'process';
+            state = 'start_scan';
         
-        case 'process'
+        case 'start_scan'
             
-            scan = 0;
-            drive = 0;
-            
-            switch stage
+            if scan < 90
                 
-                case 'start_scan'
-
-                    Z(2) = deg2rad(90);
-                    Z(1) = 0;
-                    stage = 'turn_back';
-                    
-                case 'turn_back'
-                    
-                    Z(2) = deg2rad(-45);
-                    Z(1) = 0;
-                    stage = 'topoint';
-                    
-                case 'topoint'
-                    
-                    mu_t(1:3)
-                    disp(mu_t)
-                    Z = getZ([4,4],mu_t(1:3));
-                    disp(Z)
-                    stage = 'scan';
-                    
-                case 'scan' 
-
-                   Z(2) = deg2rad(360);
-                   Z(1) = 0;
-                   stage = 'torescue';
-
-                case 'torescue'
-
-                    % check landmarks against lndmrks_need
-
-                    check1 = [];
-                    check2 = [];
-
-                    if size(lndmrk_id,2) == 5 % Found all five.
-                        check1 = find(lndmrk_id == lndmrks_need(1,1)); 
-                        check2 = find(lndmrk_id == lndmrks_need(2,1)); 
-                    end
-
-                    if ~isempty(check1) && ~isempty(check2)
-
-                        m1t = lndmrks_need(1,2:end);
-                        m2t = lndmrks_need(2,2:end);
-
-                        a1 = 4 + (2*(check1 - 1));
-                        a2 = 4 + (2*(check2 - 1));
-
-                        m1 = mu_t(a1:a1+1);
-                        m2 = mu_t(a2:a2+1);
-
-                        trns = getTransform(m1,m2,m1t,m2t);
-                        transformed_rescue = transPoint(trns,rescue_point);
-
-                        stage = 'done';
-                        scan = 0;
-                        drive = 0;
-                        Z = getZ(transformed_rescue(1:2),mu_t(1:3));
-
-                    else
-
-                        stage = 'done';
-                        disp('Not enough Landmarks found');
-                        disp('Rescue aborted');
-
-                    end
-                    
-                 case 'done'
-            
-                    disp('Run complete');
-                    break;
-            
-            end
-            
-            state = 'turn';
-
-        case 'turn'          
-            
-            z2abs = abs(rad2deg(Z(2)));
-            
-            if Z(2) ~= 0 && (z2abs - scan) > 1
-                
-                
-                if Z(2) < 0
-                    a = -1;
+                if (90 - scan) < 15
+                    step = 90 - scan;
                 else
-                    a = 1;
+                    step = 15;
                 end
                 
-                    
-                    if (z2abs - scan) < 15
-                        step = z2abs - scan;
-                        state = 'translate';
-                    else
-                        step = 15;
-                    end
-                    
-                    odo = turn(db,deg2rad(a*step));
-                    scan = scan + abs(rad2deg(odo(2)))
+                odo = turn(db,deg2rad(step));
+                scan = scan + rad2deg(odo(2));
+                
+            else
+                state = 'turn';
+                scan = 0;
+                odo = [0,0];
+            end
+            
 
+        case 'turn'          
+                           
+            if scan < 45
+                
+                if (45 - scan) < 15
+                    step = 45 - scan;
+                else
+                    step = 15;
+                end
+                
+                odo = turn(db,-deg2rad(step));
+                scan = scan + abs(rad2deg(odo(2)));
+                
             else
                 state = 'translate';
-                disp('Turn else statement');
                 scan = 0;
                 odo = [0,0];
             end
@@ -188,30 +115,119 @@ while run
            
         case 'translate'
                 
-            if Z(1) ~= 0
-                
+                if drive > Z(1)
+                   state = 'scan';
+                else
                    if (Z(1) - drive) < .3
                        step = Z(1) - drive;
-                       state = 'process';  
                    else
                        step = .3;
                    end
-                   
+                       
                    odo = translate(db,step);
                    drive = drive + odo(1);
+                end
+                
+        case 'scan' 
+            
+            if scan < 360
+                odo = turn(db,deg2rad(15));
+                scan = scan + 15;
             else
-               state = 'process';   
-               odo = [0,0];
-               drive = 0;
+                state = 'find';
+                odo = [0,0];
+                scan = 0;
             end
             
+        case 'find'
+            
+            % check landmarks against lndmrks_need
+            
+            check1 = [];
+            check2 = [];
+            
+            if size(lndmrk_id,2) == 5 % Found all five.
+                check1 = find(lndmrk_id == lndmrks_need(1,1)); 
+                check2 = find(lndmrk_id == lndmrks_need(2,1)); 
+            end
+            
+            if ~isempty(check1) && ~isempty(check2)
+                
+                m1t = lndmrks_need(1,2:end);
+                m2t = lndmrks_need(2,2:end);
+                
+                a1 = 4 + (2*(check1 - 1));
+                a2 = 4 + (2*(check2 - 1));
+                
+                m1 = mu_t(a1:a1+1);
+                m2 = mu_t(a2:a2+1);
+                
+                trns = getTransform(m1,m2,m1t,m2t);
+                transformed_rescue = transPoint(trns,rescue_point);
+                
+                state = 'turn2rescue';
+                scan = 0;
+                drive = 0;
+                Z = getZ(transformed_rescue(1:2),mu_t(1:3));
+                
+            else
+            
+                state = 'done';
+                disp('Not enough Landmarks found');
+                disp('Rescue aborted');
+                
+            end
+            
+        case 'turn2rescue'
+            
+            z2abs = abs(rad2deg(Z(2)));
+            if Z(2) < 0
+                a = -1;
+            else
+                a = 1;
+            end
+            
+            if scan < z2abs
+                
+                if (z2abs - scan) < 15
+                    step = z2abs - scan;
+                else
+                    step = 15;
+                end
+                
+                odo = turn(db,a*deg2rad(step));
+                scan = scan + abs(rad2deg(odo(2)));
+            else
+                state = 'move2rescue';
+                scan = 0;
+                odo = [0,0];
+            end
+
+        case 'move2rescue'
+
+            if drive >= Z(1)
+               state = 'done';
+            else
+               if (Z(1) - drive) < .3
+                   step = Z(1) - drive;
+               else
+                   step = .3;
+               end
+
+               odo = translate(db,step);
+               drive = drive + odo(1);
+            end
+
+        case 'done'
+            
+            disp('Run complete');
+            break;
+            
     end
-    
+        
     im = db.rgbdcamera.get_image();
-    lnd = findLandmarks(im,fig2);
+    lnd = findLandmarks(im);
     [mu_t,sigma_t] = ekf.update(odo,lnd);
-    disp([odo(1),rad2deg(odo(2))]);
-    disp([mu_t(1),mu_t(2),rad2deg(mu_t(3))]);
     lndmrk_id = ekf.lndmrk_id;
   
     %% Plot Actual Landmark and Robot States.
@@ -238,7 +254,7 @@ while run
     
     figure(fig)
     axis([-1,9,-1,9]);
-    cla
+    
     hold on
     
     
@@ -273,7 +289,7 @@ while run
     
     hold off
     drawnow;
-    pause(5)
+    
             
          
 end
@@ -333,6 +349,11 @@ function p = transPoint(trans,point)
          point(2); ...
          1       ];
 
+%     b = [point(1), point(2), 1];
+
+
+%     p = dot(a,b);
+
       p = a*b;
   
 end
@@ -366,11 +387,9 @@ function odo = turn(db,ang)
         end
         
     end
-    check = getenc(db);
-    current = check - start;
-    c_ang = ((current(1) - current(2))/(.4));
+    
     pause(0.2)
-    odo = [0,c_ang];
+    odo = [0,ang_true];
 
 end
 
@@ -418,7 +437,7 @@ z = [r,b];
 
 end
 
-function [landmarks] = findLandmarks(image,fig2)
+function [landmarks] = findLandmarks(image)
 % landmarks = [range,bearing,id]
 
 ie = 1;
@@ -433,8 +452,8 @@ foundRed = iblobs(thresh_red,'area',[50,50000],'boundary', 'class',1);
 foundGreen = iblobs(thresh_green, 'area', [50,50000], 'boundary', 'class',1);
 foundBlue = iblobs(thresh_blue, 'area', [50,50000], 'boundary', 'class',1);
 
- figure(fig2)
- imshow(image);
+% figure(1)
+% idisp(image);
 % figure(2)
 % idisp(thresh_red);
 % figure(3)
@@ -492,13 +511,10 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
            id = id(ind);
            lndid = bi2de([de2bi(id(1),2),de2bi(id(2),2),de2bi(id(3),2)]);
            
-           objheight = (cont(1).vmax - cont(1).vmin) + (cont(2).vmax - cont(2).vmin) + (cont(3).vmax - cont(3).vmin);
-           objheight = objheight/3;
-           
-           distance = (.10*645)/objheight; %640 - 650
-           ratio = objheight/width;
+           distance = (.10*645)/height;
+           ratio = height/width;
                       
-           if (distance < 5.2) && (ratio < .526)
+           if (distance < 5.2) && (ratio < .52)
            
                lnd(tally,1) = distance + .175;
 
@@ -506,8 +522,11 @@ if totalFound > 2 % Needs to be at least 3 for one landmark
 
                fov = 45;
 
-
-               an = (fov/(sqrt(512^2 + 512^2)))*((512/2)-mid)*-1;
+               if mid == 512/2
+                   an = 0;
+               else
+                  an = (((fov/2)/(512/2))*(mid-(512/2)))*-1;
+               end
 
                lnd(tally,2) = deg2rad(an);
                lnd(tally,3) = lndid;
