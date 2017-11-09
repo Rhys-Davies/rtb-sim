@@ -30,6 +30,16 @@ classdef sim_depth_camera < sim_camera
         end
         
         function im = get_image(obj)
+        % sim_depth_sensor.get_image
+        %
+        % Gets a greyscale depth image from a vision sensor.
+        % 
+        % Returns:
+        %
+        %   im          % An m*n image matrix, m = horizontal resolution
+        %                 and n = verticle resolution.
+        %
+        
         
             im = obj.sim.readVisionSensorDepth(obj.id);
         

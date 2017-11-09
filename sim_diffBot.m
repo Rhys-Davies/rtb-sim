@@ -42,6 +42,11 @@ classdef sim_diffBot < sim_entity
         end
         
         function setMotorVel(obj,new)
+        % diffBot.setMotorVel
+        %
+        % Sets the wheel motors to a velocity. Velocity must be expressed
+        % as radians/sec, and given in the form [right_motor,left_motor].
+        %
         
             obj.sim.pauseComms(true);
             obj.wheels(1).set_tgt_vel(new(1))
@@ -50,12 +55,24 @@ classdef sim_diffBot < sim_entity
         end
         
         function im = getImage(obj)
+        % diffBot.getImage
+        %
+        % Gets an RGB image from the diffbot.
+        %
         
             im = obj.rgbdcamera.image;
         
         end
         
         function enc = getEncoder(obj)
+        % diffBot.getEncoder
+        %
+        % Gets an encoder reading. Encoder cumulatively counts degrees 
+        % rotated by the wheel, and never overflows/wraps. Value is returned
+        % in radians. The cumulative counting of the joint angle is done in 
+        % a V-REP child script attached to the diffBot in V-REP. 
+        %
+        % Returns [right_enc, left_enc]
         
              a(1) = obj.sim.getFloatSignal('r_encoder');
              a(2) = obj.sim.getFloatSignal('l_encoder');

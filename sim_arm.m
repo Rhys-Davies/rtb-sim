@@ -62,8 +62,18 @@ classdef sim_arm < sim_entity
         end
         
         function s = state(obj)
-        %% sim_arm.state    
-        % Returns the intrinsic position of each joint in the arm
+        % sim_arm.state
+        %
+        % Returns the intrinsic position of each joint in the arm. This
+        % will be represented by an n-vector, where n = number of joints.
+        % The order will be [joint 0, joint 1, ... joint n].
+        %
+        % Returns:
+        %
+        %   s           % Angle of all arms joints in radians.
+        %
+        %
+        
         
             
             a = [];
@@ -77,12 +87,17 @@ classdef sim_arm < sim_entity
         end
         
         function set_state(obj,state)
-        %% sim_arm.set_state
-        % Sets the intrinsic position of each joint in the arm
+        % sim_arm.set_state
+        %
+        % Sets the intrinsic position of each joint in the arm. You must
+        % have joint motors enabled and joint motor control enabled for all
+        % joints in the arm. See sim_arm.enable_control.  
         %
         % Arguments:
+        %
         %   state           % A vector of new joint target positions for the
         %                     arm. Angles need to be in radians.
+        %
         
             
             if size(state,2) ~= obj.numj
@@ -97,9 +112,13 @@ classdef sim_arm < sim_entity
         
         
         function enable_control(obj)
-        %% sim_arm.enable_control
+        % sim_arm.enable_control
+        %
         % Configures all joints in the arm to enable joint motors and joint
         % motor control.
+        %
+        % This is required if you intend to use sim_arm.set_state.
+        %
             
             for i=1:obj.numj
                obj.joints(i).enable_motor; 
@@ -109,9 +128,11 @@ classdef sim_arm < sim_entity
         end
         
         function disable_control(obj)
-        %% sim_arm.enable_control
+        % sim_arm.disable_control
+        %
         % Configures all joints in the arm to disable joint motors and joint
         % motor control.
+        %
             
             for i=1:obj.numj
                obj.joints(i).disable_motor

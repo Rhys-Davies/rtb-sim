@@ -58,6 +58,25 @@ classdef sim_fast_hokuyo < sim_entity
         end
         
         function [pnts,numdet] = scan(obj)
+        % sim_fast_hokuyo.scan
+        %
+        % Returns a full scan from the hokuyo. Retrives a scan from each of
+        % the two sensors, transforms them into the reference frame of the 
+        % "fastHokuyo_ref" dummy object (represented in this class as
+        % sim_fast_hokuyo.ref), and combines them.
+        %
+        % Returns:
+        %
+        %   pnts        % 4-by-n array where n is 2*a. a = horizontal
+        %                 resolution of the individual sensors. The 4 rows 
+        %                 are x, y, z, distance. All coordinates are w.r.t 
+        %                 sim_fast_hokuyo.ref.  
+        %   numdet      % A n-vector, where n = total number of pixels 
+        %                 scanned. The n-th element corresponds to 
+        %                 the n-th column of "pnts", and represents the state
+        %                 of the "beam" (true = broken, false = continued to 
+        %                 infinity.
+        %
         
             p1 = obj.sensor1.scan;
             p2 = obj.sensor2.scan;

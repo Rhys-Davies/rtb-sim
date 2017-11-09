@@ -43,6 +43,13 @@ classdef sim_camera < sim_vision_sensor
         % Arguments
         %   grey               % Boolean. When true a greyscale image will
         %                        be returned.
+        % 
+        % Returns:
+        %
+        %   im                 % If grey = true, a h-by-v image matrix. If 
+        %                        grey = false or grey not specified, a
+        %                        h-by-v-by-3 image matrix.
+        %
             if nargin < 2
                 grey = false;
             else

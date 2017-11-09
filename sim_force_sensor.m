@@ -26,31 +26,46 @@ classdef sim_force_sensor < sim_entity
         end
         
         
-        function res = torque(obj)
+        function trq = torque(obj)
         % sim_force_sensor.torque
-        % Returns the angular force being exerted on the force sensor 
+        %
+        % Returns the torque acting on the force sensor.
+        %
+        % Returns:
+        %   
+        %   trq         % A torque in Newton meters. 
         %
            
-            [~,res,~] = obj.readForceSensor(obj.id);
+            [~,trq,~] = obj.readForceSensor(obj.id);
             
         end
         
-        function res = broken(obj)
+        function brk = broken(obj)
         % sim_force_sensor.state
+        %
         % Returns true if the force sensor has been broken. False if it is
         % still intact.
         %
+        % Returns:
+        %
+        %   brk      % A logical value. 
+        %
         
-            [res,~,~] = obj.readForceSensor(obj.id);
+            [brk,~,~] = obj.readForceSensor(obj.id);
             
         end
         
-        function res = force(obj)
+        function frc = force(obj)
         % sim_force_sensor.force
+        %
         % Returns the linear force acting on the force sensor.
         %
+        % Returns:
+        % 
+        %   frc     % A force in Newtons
+        %
             
-            [~,~,res] = obj.readForceSensor(obj.id);
+            [~,~,frc] = obj.readForceSensor(obj.id);
         
         end
         

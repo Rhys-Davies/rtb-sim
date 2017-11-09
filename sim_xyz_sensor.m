@@ -10,6 +10,14 @@
 %
 %   scan        % Retrieves a point cloud from the sensor.
 %
+%   resolution          % Retrieves scan resolution of sensor. Returns [w,h]
+%   fov                 % Retrieves the scan angle, or field of view, of
+%                         the sensor.
+%
+%   set_resolution      % Sets the sensor's resolution.
+%   set_fov             % Sets the sensor's scan angle.
+%
+%
 
 
 classdef sim_xyz_sensor < sim_vision_sensor
@@ -26,6 +34,12 @@ classdef sim_xyz_sensor < sim_vision_sensor
         end
         
         function data = scan(obj)
+            % sim_xyz_sensor.scan
+            %
+            % Gets data from a vision sensor with the "Extract coordinates
+            % from work image" filter applied.
+            %
+            %
            
             obj.sim.setIntegerSignal('handle_xyz_sensor',1) 
  

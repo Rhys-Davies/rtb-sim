@@ -11,7 +11,13 @@
 %
 %   scan               % Retrieves point cloud data from from the sensor.
 %
-
+%   resolution          % Retrieves scan resolution of sensor. Returns [w,h]
+%   fov                 % Retrieves the scan angle, or field of view, of
+%                         the sensor.
+%
+%   set_resolution      % Sets the sensor's resolution.
+%   set_fov             % Sets the sensor's scan angle.
+%
 
 
 
