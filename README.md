@@ -17,15 +17,20 @@
             * remoteApi.dll (Windows)
             * remoteApi.so (Linux)
             * remoteApi.dylib (OSX)
-
-    The folder /API has been provided to place these files in for convenince sake.
+    
+    These files are found in:
+    "path/to/VREP_install_directory/programming/remoteApiBindings/lib/"
+    and
+    "path/to/VREP_install_directory/programming/remoteApiBindings/matlab"
+    
+    It is also possible to pass the directory path to your V-REP install as 
+    an optional parameter in VREP(). 
 
 ## Example
 
-    See trsfuntest.m in /examples
+    See trs_demo and diffBot_demo repositories.
 
-## TRS
 
-    The contents of the /trs folder are from the TRS Task github repository.
-    https://github.com/ULgRobotics/trs
-    All files copyright © their original owners.
+## License
+
+    This code is provided as-is under an MIT License. Have fun! :)
