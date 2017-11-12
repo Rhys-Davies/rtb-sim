@@ -21,12 +21,11 @@
     These files are found in:
     "path/to/VREP_install_directory/programming/remoteApiBindings/lib/"
     and
-    "path/to/VREP_install_directory/programming/remoteApiBindings/matlab"
+    "path/to/VREP_install_directory/programming/remoteApiBindings/matlab/"
     
-    It is also possible to pass the directory path to your V-REP install as 
-    an optional parameter in VREP(). 
+    See the documentation in VREP.m for alternatives.
 
-## Example
+## Examples
 
     See trs_demo and diffBot_demo repositories.
 
