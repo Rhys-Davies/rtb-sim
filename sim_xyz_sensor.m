@@ -34,12 +34,21 @@ classdef sim_xyz_sensor < sim_vision_sensor
         end
         
         function data = scan(obj)
-            % sim_xyz_sensor.scan
-            %
-            % Gets data from a vision sensor with the "Extract coordinates
-            % from work image" filter applied.
-            %
-            %
+        % sim_xyz_sensor.scan
+        %
+        % Gets data from a vision sensor with the "Extract coordinates
+        % from work image" filter applied.
+        %
+        % Returns:
+        %
+        %   data                      % 4 rows, w*h columns
+        %                               The rows represet:
+        %                               x of detected point (w.r.t. vision sensor)
+        %                               y of detected point (w.r.t. vision sensor)
+        %                               z of detected point (w.r.t. vision sensor)
+        %                               dist to detected point
+        %                               Each column is one point (pixel).
+        %
            
             obj.sim.setIntegerSignal('handle_xyz_sensor',1) 
  

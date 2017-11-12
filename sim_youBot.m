@@ -76,7 +76,24 @@ classdef sim_youBot < sim_entity
         end
         
         function move(obj, x_dot, y_dot, theta_dot)
-            
+        % sim_youBot.move
+        %
+        % When given velocities in the x and y directions and a rotational
+        % velocity, will set the wheel velocities as appropriate. Linear
+        % velocities must be in m/s and angular in rad/s.
+        %
+        % Arguments:
+        %
+        %   x_dot           % Velocity in x direction. M/s
+        %   y_dot           % Velocity in y direction. M/s
+        %   theta_dot       % Rotational velocity. Rad/s
+        %
+
+        
+            %x_dot = x_dot * 20;
+            %y_dot = y_dot * 20;
+            %theta_dot = theta_dot * 10;
+        
             vel(1) = -x_dot-y_dot+theta_dot;
             vel(2) = -x_dot+y_dot+theta_dot;
             vel(3) = -x_dot-y_dot-theta_dot;
@@ -89,6 +106,15 @@ classdef sim_youBot < sim_entity
         
 
         function setwheelvel(obj,vel)
+        % sim_youBot.setwheelvel
+        %
+        % Sets velocities of all 4 wheels. Order of input vector is: 
+        % [front_left, rear_left, rear_right, front_right.]
+        %
+        % Arguemnts:
+        %
+        %   vel         % 4-vector of velocities. Rad/s.   
+        %
         
             obj.sim.pauseComms(true);
 
@@ -101,27 +127,55 @@ classdef sim_youBot < sim_entity
         end
         
         function setkinematicmode(obj,mode)
+        % sim_youBot.setkinematicsmode
+        %
+        % Sets the kinematic mode signal. Must be enabled to use V-REP's IK
+        % solver to move the arm.
+        %
+        % Arguments:
+        %
+        %   mode        % 2 for IK mode. 0 for disabled.
+        %
    
            obj.sim.setIntegerSignal('km_mode', mode);
             
         end
         
         function open_gripper(obj)
+        % sim_youBot.open_gripper
+        %
+        % Opens the youBot's gripper.
+        %
+        
             
             obj.sim.setIntegerSignal('gripper_open',1)
             
         end
         
         function close_gripper(obj)
+        % sim_youBot.close_gripper
+        %
+        % Closes the youBot's gripper.
+        %
             
             obj.sim.setIntegerSignal('gripper_open',0)
             
         end
         
         function ang = get_wheel_ang(obj)
+        % sim_youBot.get_wheel_ang
+        %
+        % Retrieves the current wheel angles of all four wheels. Returns 4
+        % vector with order [front_left, rear_left, rear_right, front_right.]
+        % 
+        % Returns:
+        %
+        %   ang         % Current wheel angles in radians. Will be value
+        %                 from 0 to 2pi.
+        %
         
             for i=1:4
-               a(i) = obj.wheels(i).angl;
+               a(i) = obj.wheels(i).get_angle;
             end
             
             ang = a;

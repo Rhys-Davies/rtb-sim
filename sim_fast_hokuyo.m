@@ -57,7 +57,7 @@ classdef sim_fast_hokuyo < sim_entity
             
         end
         
-        function [pnts,numdet] = scan(obj)
+        function [pnts,contacts] = scan(obj)
         % sim_fast_hokuyo.scan
         %
         % Returns a full scan from the hokuyo. Retrives a scan from each of
@@ -88,7 +88,7 @@ classdef sim_fast_hokuyo < sim_entity
             p2 = p2(1:3,:);  
 
             pnts  = [ homtrans(obj.trans1, p1), homtrans(obj.trans2, p2) ];
-            numdet = [obs1, obs2];
+            contacts = [obs1, obs2];
 
         end
             

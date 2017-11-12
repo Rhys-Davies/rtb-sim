@@ -39,8 +39,6 @@ classdef sim_youBot_TRS < sim_youBot
             
             obj = obj@sim_youBot(sim,ident);
             
-           
-            %obj.hokuyo = sim.hokuyo('fastHokuyo',obj.ref);
             obj.hokuyo = sim.hokuyo('fastHokuyo');
             obj.rgbdcamera = sim.rgbdCamera('rgbdSensor');
 
@@ -51,6 +49,23 @@ classdef sim_youBot_TRS < sim_youBot
         
         
         function [pnts,contacts] = hokuyo_scan(obj)
+        % sim_youBot_TRS.hokuyo_scan
+        %
+        % Returns a full scan from the hokuyo. Retrives a hokuyo scan and
+        % transforms it into the youBot's reference frame (sim_youBot.ref).
+        %
+        % Returns:
+        %
+        %  pnts         % 4-by-n array where n is 2*a. a = horizontal
+        %                 resolution of the individual sensors. The 4 rows 
+        %                 are x, y, z, distance. All coordinates are w.r.t 
+        %                 sim_youBot.ref.  
+        %  contacts     % A n-vector, where n = total number of pixels 
+        %                 scanned. The n-th element corresponds to 
+        %                 the n-th column of "pnts", and represents the state
+        %                 of the "beam" (true = broken, false = continued to 
+        %                 infinity.
+        %
  
             
             [data,con] = obj.hokuyo.scan();
@@ -61,12 +76,35 @@ classdef sim_youBot_TRS < sim_youBot
         end
         
         function im = get_image(obj)
+        % sim_youBot_TRS.get_image
+        %
+        % Returns an RGB image from the RGBD Camera.
+        %
+        % Returns:
+        %
+        %   im                 % A h-by-v-by-3 image matrix.
+        %
             
             im = obj.rgbdcamera.get_image();
         
         end
         
         function pnts = get_point_cloud(obj)
+        % sim_youBot_TRS.get_point_cloud
+        %
+        % Gets a point cloud from the RGBD Camera.
+        %
+        % Returns:
+        %
+        %   data                      % 4 rows, w*h columns
+        %                               The rows represet:
+        %                               x of detected point (w.r.t. vision sensor)
+        %                               y of detected point (w.r.t. vision sensor)
+        %                               z of detected point (w.r.t. vision sensor)
+        %                               dist to detected point
+        %                               Each column is one point (pixel).
+        %
+
             
             pnts = obj.rgbdcamera.get_point_cloud();
             

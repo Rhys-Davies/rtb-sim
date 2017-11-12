@@ -79,7 +79,7 @@ classdef sim_arm < sim_entity
             a = [];
                         
             for i=1:obj.numj
-               a(i) = obj.joints(i).angl(state(i));
+               a(i) = obj.joints(i).get_angle(state(i));
             end
             
             s = a;
