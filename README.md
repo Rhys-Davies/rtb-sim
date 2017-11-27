@@ -10,8 +10,8 @@
     'v = VREP();' will by default attempt to connect to the V-REP Remote API on localhost (127.0.0.1:19997).
     VREP.m also wraps the majority of V-REP's Remote API methods, see the documentation in VREP.m for a full list of methods.
 
-    An entity object, sim_entity.m, represents a generic object inside the V-REP scene. Factory methods are provided in VREP.m to 
-    generate these objects.
+    An entity object, sim_entity.m, represents a generic object inside the V-REP scene.
+    Factory methods are provided in VREP.m to generate these objects.
     'obj = v.entity('objname');' will create an instance of the sim_entity.m class for the V-REP scene object 'objname'.
     The entity object is subclassed for specific object types such as joints, camera's, LiDAR's, etc.
 
