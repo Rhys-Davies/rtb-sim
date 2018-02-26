@@ -1,8 +1,11 @@
 # rtb-sim
 
-    rtb-sim is a class-based interface designed to wrap V-REP's Remote API MATLAB bindings. 
-    The goal is to make it a bit simpler to interact with V-REP in MATLAB. 
-    This project was designed to work alongside Peter Corke's Robotics Toolbox for MATLAB.
+    This was my university thesis project, completed in 2017 under the suprevision of Distinguished Professor
+    Peter Corke. It is a class-based interface designed for use with Peter Corke's Robotics Toolbox for MATLAB.
+    It wraps V-REP's Remote API MATLAB bindings, and provides a set of classes to mirror simulation objects in the
+    MATLAB workspace. The goal is to make it a bit simpler to interact with V-REP in MATLAB.
+    
+    It is released under an MIT License with no warrenty in the hope anyone who finds it useful expands upon it.
 
 ## Operation
 
