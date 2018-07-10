@@ -70,11 +70,11 @@
 
     This code is provided as-is under an MIT License. Have fun! :)
     
-## Notes/TODO:
-
+## TODO:
+    * Add support for VREP 3.5
     * Seperate the classes representing the diffBot and TRS youBot into their repective repositories.
     * @Folder method of defining VREP.m class. This would make it easier to add factory methods for new object types.
       E.g. @newobjtypefactory.m in @VREP. Would allow factory methods to be provided in packages containing new object types without     
       overwriting/modifying the VREP.m file.
-    * Rework Image Sensor handling. There are currently 5 classes representing variations of Image Sensor operations, this seems a bit   
-      redundant.
+    * Rework Image Sensor handling. There are currently 5 classes representing variations of Image Sensor operations, this seems   
+      a bit redundant.
